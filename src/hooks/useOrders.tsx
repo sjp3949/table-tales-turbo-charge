@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
@@ -66,8 +65,7 @@ export function useOrders() {
     }) => {
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Fix order_type format - use lowercase strings to match database constraints
-      const orderType = tableId ? 'dine_in' : 'takeout';
+      const orderType = tableId ? 'dine-in' : 'takeout';
       
       console.log('Creating order with type:', orderType, 'tableId:', tableId);
       
