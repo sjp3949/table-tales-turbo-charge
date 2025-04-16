@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MenuItem, MenuCategory } from '@/types';
@@ -6,7 +7,7 @@ import { toast } from '@/hooks/use-toast';
 export function useMenu() {
   const queryClient = useQueryClient();
 
-  const { data: menuItems, isLoading: isLoadingMenu } = useQuery({
+  const { data: menuItems = [], isLoading: isLoadingMenu } = useQuery({
     queryKey: ['menu-items'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,7 +31,7 @@ export function useMenu() {
     },
   });
 
-  const { data: categories, isLoading: isLoadingCategories } = useQuery({
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ['menu-categories'],
     queryFn: async () => {
       const { data, error } = await supabase

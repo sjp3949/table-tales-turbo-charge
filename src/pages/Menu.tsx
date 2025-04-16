@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MenuItem } from '@/types';
@@ -78,11 +79,11 @@ export default function Menu() {
           >
             <TabsList className="w-full sm:w-auto overflow-auto">
               <TabsTrigger value="all">All Categories</TabsTrigger>
-              {categories.map(category => (
+              {categories?.map(category => (
                 <TabsTrigger key={category.id} value={category.id}>
                   {category.name}
                 </TabsTrigger>
-              ))}
+              )) || null}
             </TabsList>
           </Tabs>
         </div>
@@ -120,7 +121,7 @@ export default function Menu() {
           onClose={() => setDialogOpen(false)}
           onSave={handleSaveItem}
           initialData={editingItem}
-          categories={categories ?? []}
+          categories={categories || []}
         />
       </div>
     </MainLayout>
