@@ -1,44 +1,31 @@
-
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { InventoryItem as InventoryItemType } from '@/types';
 import { InventoryItemCard } from '@/components/inventory/InventoryItem';
-import { mockInventoryItems } from '@/data/mockData';
+import { useInventory } from '@/hooks/useInventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Search, AlertTriangle } from 'lucide-react';
 
 export default function Inventory() {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemType[]>(mockInventoryItems);
+  const { inventory, isLoading, updateInventoryItem } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   
-  const handleSaveItem = (updatedItem: InventoryItemType) => {
-    setInventoryItems(
-      inventoryItems.map(item => 
-        item.id === updatedItem.id
-          ? updatedItem
-          : item
-      )
-    );
-  };
-  
   // Filter inventory items
-  const filteredItems = inventoryItems.filter(item => {
-    const matchesSearch = 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredItems = inventory?.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
       activeFilter === 'all' ||
       (activeFilter === 'low-stock' && item.quantity <= item.threshold);
     
     return matchesSearch && matchesFilter;
-  });
+  }) ?? [];
   
   // Count low stock items
-  const lowStockCount = inventoryItems.filter(
+  const lowStockCount = inventory?.filter(
     item => item.quantity <= item.threshold
-  ).length;
+  ).length ?? 0;
   
   return (
     <MainLayout>
@@ -86,7 +73,11 @@ export default function Inventory() {
           </Tabs>
         </div>
         
-        {filteredItems.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg bg-muted/10">
             <AlertTriangle className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="text-muted-foreground">No inventory items found</p>
@@ -97,7 +88,7 @@ export default function Inventory() {
               <InventoryItemCard
                 key={item.id}
                 item={item}
-                onSave={handleSaveItem}
+                onSave={updateInventoryItem.mutate}
               />
             ))}
           </div>

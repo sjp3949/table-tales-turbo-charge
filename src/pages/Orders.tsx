@@ -1,18 +1,17 @@
-
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Order } from '@/types';
 import { OrderCard } from '@/components/orders/OrderCard';
-import { mockOrders } from '@/data/mockData';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useOrders } from '@/hooks/useOrders';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Printer, AlertTriangle } from 'lucide-react';
 
 export default function Orders() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const { orders, isLoading, updateOrderStatus } = useOrders();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
   const [activeStatus, setActiveStatus] = useState('all');
@@ -22,24 +21,10 @@ export default function Orders() {
     setViewDetailsOpen(true);
   };
   
-  const handleUpdateStatus = (order: Order, newStatus: Order['status']) => {
-    const updatedOrders = orders.map(o => 
-      o.id === order.id
-        ? { ...o, status: newStatus, updatedAt: new Date() }
-        : o
-    );
-    setOrders(updatedOrders);
-  };
-  
   // Filter orders by status
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders?.filter(order => 
     activeStatus === 'all' || order.status === activeStatus
-  );
-  
-  // Group active orders by status
-  const getOrdersByStatus = (status: Order['status']) => {
-    return orders.filter(order => order.status === status);
-  };
+  ) ?? [];
   
   return (
     <MainLayout>
@@ -66,7 +51,11 @@ export default function Orders() {
           </TabsList>
         </Tabs>
         
-        {filteredOrders.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg bg-muted/10">
             <AlertTriangle className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="text-muted-foreground">No orders found</p>
@@ -78,13 +67,14 @@ export default function Orders() {
                 key={order.id}
                 order={order}
                 onViewDetails={handleViewDetails}
-                onUpdateStatus={handleUpdateStatus}
+                onUpdateStatus={(order, status) => 
+                  updateOrderStatus.mutate({ id: order.id, status })
+                }
               />
             ))}
           </div>
         )}
         
-        {/* Order Details Dialog */}
         {selectedOrder && (
           <Dialog open={viewDetailsOpen} onOpenChange={setViewDetailsOpen}>
             <DialogContent className="sm:max-w-[550px]">

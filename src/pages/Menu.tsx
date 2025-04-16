@@ -1,18 +1,16 @@
-
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { MenuItem, MenuCategory } from '@/types';
+import { MenuItem } from '@/types';
 import { MenuCard } from '@/components/menu/MenuCard';
 import { MenuDialog } from '@/components/menu/MenuDialog';
-import { mockMenuItems, mockCategories } from '@/data/mockData';
+import { useMenu } from '@/hooks/useMenu';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Search } from 'lucide-react';
 
 export default function Menu() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
-  const [categories] = useState<MenuCategory[]>(mockCategories);
+  const { menuItems, categories, isLoading, addMenuItem, updateMenuItem, deleteMenuItem } = useMenu();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | undefined>(undefined);
   const [activeCategory, setActiveCategory] = useState('all');
@@ -28,51 +26,23 @@ export default function Menu() {
     setDialogOpen(true);
   };
   
-  const handleDeleteItem = (item: MenuItem) => {
-    // In a real app, show confirmation dialog first
-    setMenuItems(menuItems.filter(i => i.id !== item.id));
-  };
-  
-  const handleToggleAvailability = (item: MenuItem, available: boolean) => {
-    setMenuItems(
-      menuItems.map(i => 
-        i.id === item.id
-          ? { ...i, available }
-          : i
-      )
-    );
-  };
-  
   const handleSaveItem = (item: MenuItem) => {
     if (editingItem) {
-      // Update existing item
-      setMenuItems(
-        menuItems.map(i => 
-          i.id === item.id
-            ? item
-            : i
-        )
-      );
+      updateMenuItem.mutate(item);
     } else {
-      // Add new item
-      setMenuItems([...menuItems, item]);
+      addMenuItem.mutate(item);
     }
     setDialogOpen(false);
   };
   
   // Filter menu items by category and search query
-  const filteredItems = menuItems.filter(item => {
+  const filteredItems = menuItems?.filter(item => {
     const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
     const matchesSearch = 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      item.description?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
-  });
-  
-  const getCategoryNameById = (id: string) => {
-    const category = categories.find(cat => cat.id === id);
-    return category?.name || id;
-  };
+  }) ?? [];
   
   return (
     <MainLayout>
@@ -117,7 +87,11 @@ export default function Menu() {
           </Tabs>
         </div>
         
-        {filteredItems.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg bg-muted/10">
             <p className="mb-4 text-muted-foreground">No menu items found</p>
             <Button variant="outline" onClick={handleAddItem}>
@@ -132,8 +106,10 @@ export default function Menu() {
                 key={item.id}
                 item={item}
                 onEdit={handleEditItem}
-                onDelete={handleDeleteItem}
-                onToggleAvailability={handleToggleAvailability}
+                onDelete={() => deleteMenuItem.mutate(item.id)}
+                onToggleAvailability={(item, available) => 
+                  updateMenuItem.mutate({ ...item, available })
+                }
               />
             ))}
           </div>
@@ -144,7 +120,7 @@ export default function Menu() {
           onClose={() => setDialogOpen(false)}
           onSave={handleSaveItem}
           initialData={editingItem}
-          categories={categories}
+          categories={categories ?? []}
         />
       </div>
     </MainLayout>
