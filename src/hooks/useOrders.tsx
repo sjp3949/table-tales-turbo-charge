@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
@@ -48,7 +49,7 @@ export function useOrders() {
         })) as OrderItem[],
         status: order.status,
         createdAt: new Date(order.created_at),
-        updatedAt: new Date(order.created_at), // Using created_at as Supabase doesn't have updated_at
+        updatedAt: new Date(order.created_at),
         total: order.total
       })) as Order[];
     },
@@ -88,3 +89,4 @@ export function useOrders() {
     updateOrderStatus,
   };
 }
+

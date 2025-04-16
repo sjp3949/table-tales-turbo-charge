@@ -24,10 +24,7 @@ export function useMenu() {
         throw error;
       }
       
-      return data.map(item => ({
-        ...item,
-        available: item.is_available
-      }));
+      return data as MenuItem[];
     },
   });
 
@@ -48,7 +45,7 @@ export function useMenu() {
         throw error;
       }
       
-      return data;
+      return data as MenuCategory[];
     },
   });
 
@@ -61,7 +58,7 @@ export function useMenu() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as MenuItem;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-items'] });
@@ -83,13 +80,21 @@ export function useMenu() {
     mutationFn: async (item: MenuItem) => {
       const { data, error } = await supabase
         .from('menu_items')
-        .update(item)
+        .update({
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: item.category,
+          image_url: item.image,
+          is_available: item.available,
+          is_veg: false // Default value as per your schema
+        })
         .eq('id', item.id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return data as MenuItem;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-items'] });
@@ -141,3 +146,4 @@ export function useMenu() {
     deleteMenuItem,
   };
 }
+
