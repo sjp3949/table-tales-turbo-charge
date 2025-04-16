@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Table } from '@/types';
@@ -6,7 +5,7 @@ import { TableSectionComponent } from '@/components/tables/TableSection';
 import { TableActionDialog } from '@/components/tables/TableActionDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, FolderPlus } from 'lucide-react';
 import { useTables } from '@/hooks/useTables';
 import {
   Select,
@@ -25,17 +24,17 @@ export default function Tables() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addTableDialogOpen, setAddTableDialogOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
-  
-  // Form state for adding new table
   const [newTableName, setNewTableName] = useState('');
   const [newTableSection, setNewTableSection] = useState('');
   const [newTableCapacity, setNewTableCapacity] = useState(4);
-  
+  const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
+  const [newSectionName, setNewSectionName] = useState('');
+
   const handleTableSelect = (table: Table) => {
     setSelectedTable(table);
     setDialogOpen(true);
   };
-  
+
   const handleAddTable = async () => {
     try {
       await addTable.mutateAsync({
@@ -52,6 +51,23 @@ export default function Tables() {
     }
   };
 
+  const handleAddSection = async () => {
+    try {
+      await addTable.mutateAsync({
+        name: `Table 1`,
+        sectionId: newSectionName,
+        capacity: 4,
+      });
+      setAddSectionDialogOpen(false);
+      setNewSectionName('');
+      if (!activeSection) {
+        setActiveSection(newSectionName);
+      }
+    } catch (error) {
+      console.error('Error adding section:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -61,16 +77,14 @@ export default function Tables() {
       </MainLayout>
     );
   }
-  
-  // Group tables by section
+
   const tablesBySection = sections?.map(section => ({
     ...section,
     tables: tables?.filter(table => table.sectionId === section.id) || [],
   })) || [];
-  
-  // Get current section data
+
   const currentSection = tablesBySection.find(s => s.id === activeSection) || tablesBySection[0];
-  
+
   return (
     <MainLayout>
       <div className="space-y-4">
@@ -82,13 +96,18 @@ export default function Tables() {
             </p>
           </div>
           
-          <Button onClick={() => setAddTableDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Table
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setAddSectionDialogOpen(true)} variant="outline">
+              <FolderPlus className="mr-2 h-4 w-4" />
+              Add Section
+            </Button>
+            <Button onClick={() => setAddTableDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Table
+            </Button>
+          </div>
         </div>
         
-        {/* For smaller screens */}
         <div className="w-full sm:hidden">
           <Select value={activeSection} onValueChange={setActiveSection}>
             <SelectTrigger>
@@ -104,7 +123,6 @@ export default function Tables() {
           </Select>
         </div>
         
-        {/* Tabs for section navigation - Hidden on small screens */}
         <div className="hidden sm:block">
           <Tabs value={activeSection} onValueChange={setActiveSection}>
             <TabsList className="w-full sm:w-auto">
@@ -117,7 +135,6 @@ export default function Tables() {
           </Tabs>
         </div>
         
-        {/* Table section */}
         {currentSection && (
           <TableSectionComponent
             section={{
@@ -130,14 +147,12 @@ export default function Tables() {
           />
         )}
         
-        {/* Table action dialog */}
         <TableActionDialog
           table={selectedTable}
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
         />
         
-        {/* Add table dialog */}
         <Dialog open={addTableDialogOpen} onOpenChange={setAddTableDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -191,7 +206,32 @@ export default function Tables() {
           </DialogContent>
         </Dialog>
         
-        {/* Legend */}
+        <Dialog open={addSectionDialogOpen} onOpenChange={setAddSectionDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Section</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="section-name">Section Name</Label>
+                <Input
+                  id="section-name"
+                  value={newSectionName}
+                  onChange={(e) => setNewSectionName(e.target.value)}
+                  placeholder="e.g., Main Dining Area"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button onClick={handleAddSection} disabled={!newSectionName}>
+                Add Section
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
         <div className="flex flex-wrap gap-4 pt-4 border-t">
           <div className="flex items-center">
             <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
