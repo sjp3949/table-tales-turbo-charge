@@ -66,8 +66,10 @@ export function useOrders() {
     }) => {
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Set correct order_type value - must be either 'dine_in' or 'takeout'
+      // Make sure order_type is exactly 'dine_in' or 'takeout' - nothing else will work with the constraint
       const orderType = tableId ? 'dine_in' : 'takeout';
+      
+      console.log('Creating order with type:', orderType);
       
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
@@ -112,6 +114,7 @@ export function useOrders() {
       });
     },
     onError: (error) => {
+      console.error('Error creating order:', error);
       toast({
         title: 'Error creating order',
         description: error.message,

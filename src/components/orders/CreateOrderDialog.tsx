@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMenu } from '@/hooks/useMenu';
 import { useOrders } from '@/hooks/useOrders';
@@ -22,7 +21,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const { createOrder } = useOrders();
   
   const [customerName, setCustomerName] = useState('');
-  const [tableId, setTableId] = useState('takeout'); // Using 'takeout' instead of empty string
+  const [tableId, setTableId] = useState('takeout'); // Using 'takeout' as default
   const [orderItems, setOrderItems] = useState<{
     menuItemId: string;
     name: string;
