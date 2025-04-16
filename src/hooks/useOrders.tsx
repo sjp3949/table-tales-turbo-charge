@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
@@ -59,7 +60,7 @@ export function useOrders() {
       items, 
       customerName 
     }: { 
-      tableId: string; 
+      tableId: string | null; 
       items: { menuItemId: string; quantity: number; price: number; notes?: string }[];
       customerName?: string;
     }) => {
@@ -68,11 +69,11 @@ export function useOrders() {
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([{
-          table_id: tableId,
+          table_id: tableId, // This can be null for takeout orders
           customer_name: customerName,
           total,
           subtotal: total,
-          order_type: 'dine_in',
+          order_type: tableId ? 'dine_in' : 'takeout',
           order_number: Date.now().toString(),
           status: 'pending'
         }])

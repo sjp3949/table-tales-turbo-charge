@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useMenu } from '@/hooks/useMenu';
 import { useOrders } from '@/hooks/useOrders';
+import { useTables } from '@/hooks/useTables';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +18,11 @@ interface CreateOrderDialogProps {
 
 export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const { menuItems, isLoading: isLoadingMenu } = useMenu();
+  const { tables, isLoading: isLoadingTables } = useTables();
   const { createOrder } = useOrders();
   
   const [customerName, setCustomerName] = useState('');
-  const [tableId, setTableId] = useState('takeout'); // Default to 'takeout' for orders without a table
+  const [tableId, setTableId] = useState(''); // Will store a valid UUID or empty string for takeout
   const [orderItems, setOrderItems] = useState<{
     menuItemId: string;
     name: string;
@@ -81,7 +83,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const handlePlaceOrder = async () => {
     try {
       await createOrder.mutateAsync({
-        tableId: tableId, // Include the tableId in the order creation
+        tableId: tableId || null, // Send null for takeout orders, valid UUID for table orders
         customerName: customerName || undefined,
         items: orderItems.map(item => ({
           menuItemId: item.menuItemId,
@@ -93,7 +95,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
       // Reset form and close dialog
       setOrderItems([]);
       setCustomerName('');
-      setTableId('takeout');
+      setTableId('');
       onClose();
     } catch (error) {
       console.error('Error creating order:', error);
@@ -119,7 +121,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
             />
           </div>
           
-          {/* Add table selection */}
+          {/* Table selection */}
           <div className="col-span-2">
             <Label htmlFor="table-id">Table or Takeout</Label>
             <Select 
@@ -127,14 +129,15 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
               onValueChange={setTableId}
             >
               <SelectTrigger id="table-id" className="mt-1">
-                <SelectValue placeholder="Select a table or takeout" />
+                <SelectValue placeholder="Takeout (no table)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="takeout">Takeout</SelectItem>
-                <SelectItem value="table1">Table 1</SelectItem>
-                <SelectItem value="table2">Table 2</SelectItem>
-                <SelectItem value="table3">Table 3</SelectItem>
-                <SelectItem value="table4">Table 4</SelectItem>
+                <SelectItem value="">Takeout (no table)</SelectItem>
+                {tables?.map(table => (
+                  <SelectItem key={table.id} value={table.id}>
+                    {table.name} ({table.capacity} seats)
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
