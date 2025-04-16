@@ -150,11 +150,54 @@ export function useTables() {
     },
   });
 
+  // Add a new dedicated function for adding sections
+  const addSection = useMutation({
+    mutationFn: async ({ 
+      name 
+    }: { 
+      name: string; 
+    }) => {
+      const { data, error } = await supabase
+        .from('tables')
+        .insert({
+          name: `Table 1`,
+          section: name,
+          capacity: 4,
+          status: 'available',
+          position_x: 100, // Default position
+          position_y: 100  // Default position
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      // Specifically invalidate the table-sections query to refresh the sections list
+      queryClient.invalidateQueries({ queryKey: ['table-sections'] });
+      queryClient.invalidateQueries({ queryKey: ['tables'] });
+      
+      toast({
+        title: 'Section added',
+        description: 'The new section has been added successfully.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error adding section',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     tables,
     sections,
     isLoading: isLoadingTables || isLoadingSections,
     updateTablePosition,
     addTable,
+    addSection, // Export the new addSection function
   };
 }

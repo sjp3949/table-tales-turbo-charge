@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Table } from '@/types';
 import { TableSectionComponent } from '@/components/tables/TableSection';
@@ -14,12 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function Tables() {
-  const { tables, sections, isLoading, addTable } = useTables();
+  const { tables, sections, isLoading, addTable, addSection } = useTables();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addTableDialogOpen, setAddTableDialogOpen] = useState(false);
@@ -29,6 +30,13 @@ export default function Tables() {
   const [newTableCapacity, setNewTableCapacity] = useState(4);
   const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
+
+  // Set the active section when sections load or change
+  useEffect(() => {
+    if (sections && sections.length > 0 && !activeSection) {
+      setActiveSection(sections[0].id);
+    }
+  }, [sections, activeSection]);
 
   const handleTableSelect = (table: Table) => {
     setSelectedTable(table);
@@ -53,16 +61,12 @@ export default function Tables() {
 
   const handleAddSection = async () => {
     try {
-      await addTable.mutateAsync({
-        name: `Table 1`,
-        sectionId: newSectionName,
-        capacity: 4,
+      await addSection.mutateAsync({
+        name: newSectionName,
       });
       setAddSectionDialogOpen(false);
+      setActiveSection(newSectionName); // Set the active section to the new one
       setNewSectionName('');
-      if (!activeSection) {
-        setActiveSection(newSectionName);
-      }
     } catch (error) {
       console.error('Error adding section:', error);
     }
@@ -157,6 +161,7 @@ export default function Tables() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Table</DialogTitle>
+              <DialogDescription>Create a new table in your selected section.</DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
@@ -210,6 +215,7 @@ export default function Tables() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Section</DialogTitle>
+              <DialogDescription>Create a new dining area section with a default table.</DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
