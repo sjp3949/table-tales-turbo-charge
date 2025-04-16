@@ -24,7 +24,16 @@ export function useMenu() {
         throw error;
       }
       
-      return data as MenuItem[];
+      // Map database fields to our frontend types
+      return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        description: item.description || '',
+        category: item.category,
+        image: item.image_url,
+        available: item.is_available
+      })) as MenuItem[];
     },
   });
 
@@ -45,7 +54,11 @@ export function useMenu() {
         throw error;
       }
       
-      return data as MenuCategory[];
+      return data.map(category => ({
+        id: category.id,
+        name: category.name,
+        description: category.description
+      })) as MenuCategory[];
     },
   });
 
@@ -53,12 +66,30 @@ export function useMenu() {
     mutationFn: async (newItem: Omit<MenuItem, 'id'>) => {
       const { data, error } = await supabase
         .from('menu_items')
-        .insert([newItem])
+        .insert([{
+          name: newItem.name,
+          description: newItem.description,
+          price: newItem.price,
+          category: newItem.category,
+          image_url: newItem.image,
+          is_available: newItem.available,
+          is_veg: false // Default value as per schema
+        }])
         .select()
         .single();
 
       if (error) throw error;
-      return data as MenuItem;
+      
+      // Map database response to our frontend type
+      return {
+        id: data.id,
+        name: data.name,
+        price: data.price,
+        description: data.description || '',
+        category: data.category,
+        image: data.image_url,
+        available: data.is_available
+      } as MenuItem;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-items'] });
@@ -94,7 +125,17 @@ export function useMenu() {
         .single();
 
       if (error) throw error;
-      return data as MenuItem;
+      
+      // Map database response to our frontend type
+      return {
+        id: data.id,
+        name: data.name,
+        price: data.price,
+        description: data.description || '',
+        category: data.category,
+        image: data.image_url,
+        available: data.is_available
+      } as MenuItem;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-items'] });
@@ -146,4 +187,3 @@ export function useMenu() {
     deleteMenuItem,
   };
 }
-
