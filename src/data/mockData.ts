@@ -125,28 +125,28 @@ export const mockTableSections: TableSection[] = [
     id: 'section1',
     name: 'Main Dining Area',
     tables: [
-      { id: 'table1', name: 'Table 1', section: 'section1', capacity: 4, status: 'available', positionX: 100, positionY: 100 },
-      { id: 'table2', name: 'Table 2', section: 'section1', capacity: 2, status: 'occupied', positionX: 250, positionY: 100, orderId: 'order1' },
-      { id: 'table3', name: 'Table 3', section: 'section1', capacity: 6, status: 'reserved', positionX: 400, positionY: 100 },
-      { id: 'table4', name: 'Table 4', section: 'section1', capacity: 4, status: 'available', positionX: 100, positionY: 250 },
-      { id: 'table5', name: 'Table 5', section: 'section1', capacity: 4, status: 'available', positionX: 250, positionY: 250 },
+      { id: 'table1', name: 'Table 1', section: 'Main Dining Area', sectionId: 'section1', sectionName: 'Main Dining Area', capacity: 4, status: 'available', positionX: 100, positionY: 100 },
+      { id: 'table2', name: 'Table 2', section: 'Main Dining Area', sectionId: 'section1', sectionName: 'Main Dining Area', capacity: 2, status: 'occupied', positionX: 250, positionY: 100, orderId: 'order1' },
+      { id: 'table3', name: 'Table 3', section: 'Main Dining Area', sectionId: 'section1', sectionName: 'Main Dining Area', capacity: 6, status: 'reserved', positionX: 400, positionY: 100 },
+      { id: 'table4', name: 'Table 4', section: 'Main Dining Area', sectionId: 'section1', sectionName: 'Main Dining Area', capacity: 4, status: 'available', positionX: 100, positionY: 250 },
+      { id: 'table5', name: 'Table 5', section: 'Main Dining Area', sectionId: 'section1', sectionName: 'Main Dining Area', capacity: 4, status: 'available', positionX: 250, positionY: 250 },
     ]
   },
   {
     id: 'section2',
     name: 'Outdoor Patio',
     tables: [
-      { id: 'table6', name: 'Table 6', section: 'section2', capacity: 2, status: 'available', positionX: 100, positionY: 100 },
-      { id: 'table7', name: 'Table 7', section: 'section2', capacity: 2, status: 'occupied', positionX: 250, positionY: 100, orderId: 'order2' },
-      { id: 'table8', name: 'Table 8', section: 'section2', capacity: 4, status: 'available', positionX: 400, positionY: 100 },
+      { id: 'table6', name: 'Table 6', section: 'Outdoor Patio', sectionId: 'section2', sectionName: 'Outdoor Patio', capacity: 2, status: 'available', positionX: 100, positionY: 100 },
+      { id: 'table7', name: 'Table 7', section: 'Outdoor Patio', sectionId: 'section2', sectionName: 'Outdoor Patio', capacity: 2, status: 'occupied', positionX: 250, positionY: 100, orderId: 'order2' },
+      { id: 'table8', name: 'Table 8', section: 'Outdoor Patio', sectionId: 'section2', sectionName: 'Outdoor Patio', capacity: 4, status: 'available', positionX: 400, positionY: 100 },
     ]
   },
   {
     id: 'section3',
     name: 'Private Room',
     tables: [
-      { id: 'table9', name: 'Table 9', section: 'section3', capacity: 8, status: 'available', positionX: 150, positionY: 150 },
-      { id: 'table10', name: 'Table 10', section: 'section3', capacity: 10, status: 'reserved', positionX: 350, positionY: 150 },
+      { id: 'table9', name: 'Table 9', section: 'Private Room', sectionId: 'section3', sectionName: 'Private Room', capacity: 8, status: 'available', positionX: 150, positionY: 150 },
+      { id: 'table10', name: 'Table 10', section: 'Private Room', sectionId: 'section3', sectionName: 'Private Room', capacity: 10, status: 'reserved', positionX: 350, positionY: 150 },
     ]
   }
 ];

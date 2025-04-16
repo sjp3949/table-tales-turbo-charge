@@ -40,10 +40,7 @@ export function useTables() {
         .from('tables')
         .select(`
           *,
-          table_sections (
-            id,
-            name
-          )
+          table_sections:section_id(id, name)
         `)
         .order('name');
       
@@ -117,6 +114,7 @@ export function useTables() {
         .insert({
           name,
           section_id: sectionId,
+          section: (sections?.find(s => s.id === sectionId)?.name || ''),
           capacity,
           status: 'available'
         })
