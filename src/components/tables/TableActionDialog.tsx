@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Table } from '@/types';
 import { useOrders } from '@/hooks/useOrders';
@@ -39,11 +38,11 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
   const { createOrder } = useOrders();
   
   const categories = Array.from(
-    new Set(mockMenuItems.map(item => item.category))
+    new Set(mockMenuItems.map(item => item.categoryId))
   );
   
   const getMenuItemsByCategory = (categoryId: string) => {
-    return mockMenuItems.filter(item => item.category === categoryId);
+    return mockMenuItems.filter(item => item.categoryId === categoryId);
   };
   
   const addItemToOrder = (menuItemId: string, name: string, price: number) => {
@@ -102,7 +101,6 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
         }))
       });
       
-      // Reset the form
       setOrderItems([]);
       setCustomerName('');
       onClose();
@@ -113,7 +111,6 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
   
   if (!table) return null;
   
-  // For demo purposes, find existing order for this table
   const existingOrder = mockOrders.find(order => order.tableId === table.id);
   
   return (
@@ -144,7 +141,6 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
           
           <TabsContent value="order" className="flex-1 flex flex-col">
             <div className="grid grid-cols-2 gap-4 flex-1">
-              {/* Customer Name Input */}
               <div className="col-span-2">
                 <Label htmlFor="customer-name">Customer Name (Optional)</Label>
                 <Input
@@ -156,24 +152,22 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                 />
               </div>
               
-              {/* Menu Items */}
               <div className="border rounded-md overflow-hidden">
                 <div className="bg-muted p-2 font-medium">Menu</div>
                 <ScrollArea className="h-[300px]">
                   <div className="p-2">
                     {categories.map(categoryId => {
                       const categoryItems = getMenuItemsByCategory(categoryId);
-                      const category = mockMenuItems
-                        .find(item => item.category === categoryId)?.category || categoryId;
+                      const categoryName = mockMenuItems
+                        .find(item => item.categoryId === categoryId)?.categoryId || categoryId;
                       
                       return (
                         <div key={categoryId} className="mb-4">
                           <h4 className="font-medium mb-2">
-                            {/* Ideally this would use the real category name from your data */}
-                            {category === 'cat1' ? 'Appetizers' : 
-                             category === 'cat2' ? 'Main Course' :
-                             category === 'cat3' ? 'Desserts' :
-                             category === 'cat4' ? 'Beverages' : 'Other'}
+                            {categoryName === 'cat1' ? 'Appetizers' : 
+                             categoryName === 'cat2' ? 'Main Course' :
+                             categoryName === 'cat3' ? 'Desserts' :
+                             categoryName === 'cat4' ? 'Beverages' : 'Other'}
                           </h4>
                           <div className="space-y-2">
                             {categoryItems.map(item => (
@@ -199,7 +193,6 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                 </ScrollArea>
               </div>
               
-              {/* Current Order */}
               <div className="border rounded-md overflow-hidden flex flex-col">
                 <div className="bg-muted p-2 font-medium">Current Order</div>
                 <ScrollArea className="flex-1">
@@ -303,9 +296,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="table
-
--status">Status</Label>
+                <Label htmlFor="table-status">Status</Label>
                 <div className="flex space-x-2">
                   <Button 
                     variant={table.status === 'available' ? 'default' : 'outline'}

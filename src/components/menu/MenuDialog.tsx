@@ -42,7 +42,7 @@ export function MenuDialog({
     name: '',
     price: 0,
     description: '',
-    category: '',
+    categoryId: '',
     available: true,
   });
   
@@ -56,7 +56,7 @@ export function MenuDialog({
         name: '',
         price: 0,
         description: '',
-        category: categories.length > 0 ? categories[0].id : '',
+        categoryId: categories.length > 0 ? categories[0].id : '',
         available: true,
       });
     }
@@ -73,7 +73,7 @@ export function MenuDialog({
   const handleCategoryChange = (value: string) => {
     setItemData(prev => ({
       ...prev,
-      category: value,
+      categoryId: value,
     }));
   };
   
@@ -143,7 +143,7 @@ export function MenuDialog({
                 Category
               </Label>
               <Select
-                value={itemData.category}
+                value={itemData.categoryId}
                 onValueChange={handleCategoryChange}
               >
                 <SelectTrigger className="col-span-3">

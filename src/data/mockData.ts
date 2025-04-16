@@ -3,11 +3,11 @@ import { MenuItem, MenuCategory, Table, TableSection, Order, InventoryItem, Reci
 
 // Mock Menu Categories
 export const mockCategories: MenuCategory[] = [
-  { id: 'cat1', name: 'Appetizers', description: 'Start your meal with these delicious options' },
-  { id: 'cat2', name: 'Main Course', description: 'Our chef\'s special main dishes' },
-  { id: 'cat3', name: 'Desserts', description: 'Sweet treats to finish your meal' },
-  { id: 'cat4', name: 'Beverages', description: 'Refreshing drinks' },
-  { id: 'cat5', name: 'Sides', description: 'Perfect companions for your main dish' },
+  { id: 'cat1', name: 'Appetizers', orderIndex: 0 },
+  { id: 'cat2', name: 'Main Course', orderIndex: 1 },
+  { id: 'cat3', name: 'Desserts', orderIndex: 2 },
+  { id: 'cat4', name: 'Beverages', orderIndex: 3 },
+  { id: 'cat5', name: 'Sides', orderIndex: 4 },
 ];
 
 // Mock Menu Items
@@ -18,7 +18,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Crispy Spring Rolls',
     price: 7.99,
     description: 'Vegetable filled spring rolls served with sweet chili sauce',
-    category: 'cat1',
+    categoryId: 'cat1',
     available: true,
   },
   {
@@ -26,7 +26,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Garlic Bread',
     price: 5.99,
     description: 'Toasted bread with garlic butter and herbs',
-    category: 'cat1',
+    categoryId: 'cat1',
     available: true,
   },
   {
@@ -34,7 +34,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Chicken Wings',
     price: 9.99,
     description: 'Spicy buffalo wings served with blue cheese dip',
-    category: 'cat1',
+    categoryId: 'cat1',
     available: true,
   },
   
@@ -44,7 +44,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Grilled Salmon',
     price: 18.99,
     description: 'Fresh salmon fillet served with seasonal vegetables',
-    category: 'cat2',
+    categoryId: 'cat2',
     available: true,
   },
   {
@@ -52,7 +52,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Chicken Alfredo',
     price: 16.99,
     description: 'Fettuccine pasta with creamy alfredo sauce and grilled chicken',
-    category: 'cat2',
+    categoryId: 'cat2',
     available: true,
   },
   {
@@ -60,7 +60,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Veggie Burger',
     price: 14.99,
     description: 'Plant-based patty with lettuce, tomato and special sauce',
-    category: 'cat2',
+    categoryId: 'cat2',
     available: true,
   },
   
@@ -70,7 +70,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Chocolate Lava Cake',
     price: 8.99,
     description: 'Warm chocolate cake with molten center, served with ice cream',
-    category: 'cat3',
+    categoryId: 'cat3',
     available: true,
   },
   {
@@ -78,7 +78,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'New York Cheesecake',
     price: 7.99,
     description: 'Classic cheesecake with berry compote',
-    category: 'cat3',
+    categoryId: 'cat3',
     available: true,
   },
   
@@ -88,7 +88,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Fresh Lemonade',
     price: 3.99,
     description: 'Freshly squeezed lemonade with mint',
-    category: 'cat4',
+    categoryId: 'cat4',
     available: true,
   },
   {
@@ -96,7 +96,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Iced Tea',
     price: 2.99,
     description: 'House-brewed iced tea with lemon',
-    category: 'cat4',
+    categoryId: 'cat4',
     available: true,
   },
   
@@ -106,7 +106,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'French Fries',
     price: 4.99,
     description: 'Crispy golden fries with sea salt',
-    category: 'cat5',
+    categoryId: 'cat5',
     available: true,
   },
   {
@@ -114,7 +114,7 @@ export const mockMenuItems: MenuItem[] = [
     name: 'Side Salad',
     price: 5.99,
     description: 'Fresh mixed greens with house dressing',
-    category: 'cat5',
+    categoryId: 'cat5',
     available: true,
   },
 ];

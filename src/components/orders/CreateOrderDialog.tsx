@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMenu } from '@/hooks/useMenu';
 import { useOrders } from '@/hooks/useOrders';
@@ -31,11 +30,11 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   }[]>([]);
   
   const categories = Array.from(
-    new Set(menuItems?.map(item => item.category) || [])
+    new Set(menuItems?.map(item => item.categoryId) || [])
   );
   
   const getMenuItemsByCategory = (categoryId: string) => {
-    return menuItems?.filter(item => item.category === categoryId) || [];
+    return menuItems?.filter(item => item.categoryId === categoryId) || [];
   };
   
   const addItemToOrder = (menuItemId: string, name: string, price: number) => {
@@ -82,7 +81,6 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
 
   const handlePlaceOrder = async () => {
     try {
-      // Convert 'takeout' string to null for API
       const actualTableId = tableId === 'takeout' ? null : tableId;
       
       await createOrder.mutateAsync({
@@ -95,7 +93,6 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
         }))
       });
       
-      // Reset form and close dialog
       setOrderItems([]);
       setCustomerName('');
       setTableId('takeout');
