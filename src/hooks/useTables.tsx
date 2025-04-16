@@ -38,10 +38,7 @@ export function useTables() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tables')
-        .select(`
-          *,
-          table_sections:section_id(id, name)
-        `)
+        .select('*')
         .order('name');
       
       if (error) {
@@ -57,8 +54,8 @@ export function useTables() {
         id: table.id,
         name: table.name,
         section: table.section,
-        sectionId: table.section_id,
-        sectionName: table.table_sections?.name || 'Unknown Section',
+        sectionId: table.section_id || '',
+        sectionName: table.section,
         capacity: table.capacity,
         status: table.status as 'available' | 'occupied' | 'reserved',
         positionX: table.position_x,
@@ -109,14 +106,19 @@ export function useTables() {
       sectionId: string;
       capacity: number;
     }) => {
+      // Find the section name from the sections data
+      const sectionName = sections?.find(s => s.id === sectionId)?.name || '';
+      
       const { data, error } = await supabase
         .from('tables')
         .insert({
           name,
           section_id: sectionId,
-          section: (sections?.find(s => s.id === sectionId)?.name || ''),
+          section: sectionName,
           capacity,
-          status: 'available'
+          status: 'available',
+          position_x: 100, // Default position
+          position_y: 100  // Default position
         })
         .select()
         .single();
