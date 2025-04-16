@@ -66,10 +66,10 @@ export function useOrders() {
     }) => {
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      // Make sure order_type is exactly 'dine_in' or 'takeout' - nothing else will work with the constraint
-      const orderType = tableId ? 'dine_in' : 'takeout';
+      // Strictly enforce the order_type to be exactly 'dine_in' or 'takeout'
+      const orderType = tableId !== null ? 'dine_in' : 'takeout';
       
-      console.log('Creating order with type:', orderType);
+      console.log('Creating order with type:', orderType, 'tableId:', tableId);
       
       const { data: orderData, error: orderError } = await supabase
         .from('orders')

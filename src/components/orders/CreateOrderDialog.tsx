@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMenu } from '@/hooks/useMenu';
 import { useOrders } from '@/hooks/useOrders';
@@ -21,7 +22,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const { createOrder } = useOrders();
   
   const [customerName, setCustomerName] = useState('');
-  const [tableId, setTableId] = useState('takeout'); // Using 'takeout' as default
+  const [tableId, setTableId] = useState('takeout'); // Special value for takeout orders
   const [orderItems, setOrderItems] = useState<{
     menuItemId: string;
     name: string;
@@ -81,8 +82,11 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
 
   const handlePlaceOrder = async () => {
     try {
+      // Convert 'takeout' string to null for API
+      const actualTableId = tableId === 'takeout' ? null : tableId;
+      
       await createOrder.mutateAsync({
-        tableId: tableId === 'takeout' ? null : tableId, // Convert 'takeout' to null for the API
+        tableId: actualTableId,
         customerName: customerName || undefined,
         items: orderItems.map(item => ({
           menuItemId: item.menuItemId,
