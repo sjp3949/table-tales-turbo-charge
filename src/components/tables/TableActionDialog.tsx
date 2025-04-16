@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Table } from '@/types';
 import { useOrders } from '@/hooks/useOrders';
@@ -35,8 +36,11 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
   }[]>([]);
   const [customerName, setCustomerName] = useState('');
   
-  const { createOrder } = useOrders();
+  const { createOrder, orders } = useOrders();
   const { menuItems, categories, isLoading: isLoadingMenu } = useMenu();
+  
+  // Find the existing order for this table if any
+  const existingOrder = table ? orders?.find(order => order.tableId === table.id) : null;
   
   const getMenuItemsByCategory = (categoryId: string) => {
     return menuItems?.filter(item => item.categoryId === categoryId) || [];
