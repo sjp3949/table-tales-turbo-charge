@@ -54,10 +54,11 @@ export function useMenu() {
         throw error;
       }
       
+      // Updating this mapping to only include fields that exist in the database
       return data.map(category => ({
         id: category.id,
         name: category.name,
-        description: category.description
+        // Remove the description property since it doesn't exist in menu_sections
       })) as MenuCategory[];
     },
   });
