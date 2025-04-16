@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MenuItem, MenuCategory } from '@/types';
@@ -24,13 +23,12 @@ export function useMenu() {
         throw error;
       }
       
-      // Map database fields to our frontend types
       return data.map(item => ({
         id: item.id,
         name: item.name,
         price: item.price,
         description: item.description || '',
-        category: item.category,
+        categoryId: item.category_id,
         image: item.image_url,
         available: item.is_available
       })) as MenuItem[];
@@ -41,7 +39,7 @@ export function useMenu() {
     queryKey: ['menu-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('menu_sections')
+        .from('menu_categories')
         .select('*')
         .order('order_index');
       
@@ -54,11 +52,10 @@ export function useMenu() {
         throw error;
       }
       
-      // Updating this mapping to only include fields that exist in the database
       return data.map(category => ({
         id: category.id,
         name: category.name,
-        // Remove the description property since it doesn't exist in menu_sections
+        orderIndex: category.order_index
       })) as MenuCategory[];
     },
   });
@@ -71,7 +68,7 @@ export function useMenu() {
           name: newItem.name,
           description: newItem.description,
           price: newItem.price,
-          category: newItem.category,
+          category_id: newItem.categoryId,
           image_url: newItem.image,
           is_available: newItem.available,
           is_veg: false // Default value as per schema
@@ -81,13 +78,12 @@ export function useMenu() {
 
       if (error) throw error;
       
-      // Map database response to our frontend type
       return {
         id: data.id,
         name: data.name,
         price: data.price,
         description: data.description || '',
-        category: data.category,
+        categoryId: data.category_id,
         image: data.image_url,
         available: data.is_available
       } as MenuItem;
@@ -116,10 +112,9 @@ export function useMenu() {
           name: item.name,
           description: item.description,
           price: item.price,
-          category: item.category,
+          category_id: item.categoryId,
           image_url: item.image,
-          is_available: item.available,
-          is_veg: false // Default value as per your schema
+          is_available: item.available
         })
         .eq('id', item.id)
         .select()
@@ -127,13 +122,12 @@ export function useMenu() {
 
       if (error) throw error;
       
-      // Map database response to our frontend type
       return {
         id: data.id,
         name: data.name,
         price: data.price,
         description: data.description || '',
-        category: data.category,
+        categoryId: data.category_id,
         image: data.image_url,
         available: data.is_available
       } as MenuItem;

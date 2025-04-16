@@ -42,9 +42,30 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          order_index: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          order_index?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          order_index?: number
+        }
+        Relationships: []
+      }
       menu_items: {
         Row: {
-          category: string
+          category_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -57,7 +78,7 @@ export type Database = {
           section_id: string | null
         }
         Insert: {
-          category: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -70,7 +91,7 @@ export type Database = {
           section_id?: string | null
         }
         Update: {
-          category?: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -83,6 +104,13 @@ export type Database = {
           section_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "menu_items_section_id_fkey"
             columns: ["section_id"]

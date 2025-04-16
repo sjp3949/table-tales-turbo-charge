@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useMenu } from '@/hooks/useMenu';
 
 interface MenuCardProps {
   item: MenuItem;
@@ -18,6 +19,9 @@ interface MenuCardProps {
 
 export function MenuCard({ item, onEdit, onDelete, onToggleAvailability }: MenuCardProps) {
   const [isAvailable, setIsAvailable] = useState(item.available);
+  const { categories } = useMenu();
+  
+  const category = categories.find(c => c.id === item.categoryId);
   
   const handleAvailabilityChange = (checked: boolean) => {
     setIsAvailable(checked);
@@ -71,10 +75,7 @@ export function MenuCard({ item, onEdit, onDelete, onToggleAvailability }: MenuC
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <div className="text-xs text-muted-foreground">
-          Category: {item.category === 'cat1' ? 'Appetizers' : 
-                     item.category === 'cat2' ? 'Main Course' :
-                     item.category === 'cat3' ? 'Desserts' :
-                     item.category === 'cat4' ? 'Beverages' : 'Other'}
+          Category: {category?.name || 'Uncategorized'}
         </div>
       </CardFooter>
     </Card>

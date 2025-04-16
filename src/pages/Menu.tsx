@@ -38,7 +38,7 @@ export default function Menu() {
   
   // Filter menu items by category and search query
   const filteredItems = menuItems?.filter(item => {
-    const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
+    const matchesCategory = activeCategory === 'all' || item.categoryId === activeCategory;
     const matchesSearch = 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       item.description?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -83,7 +83,7 @@ export default function Menu() {
                 <TabsTrigger key={category.id} value={category.id}>
                   {category.name}
                 </TabsTrigger>
-              )) || null}
+              ))}
             </TabsList>
           </Tabs>
         </div>
@@ -121,7 +121,7 @@ export default function Menu() {
           onClose={() => setDialogOpen(false)}
           onSave={handleSaveItem}
           initialData={editingItem}
-          categories={categories || []}
+          categories={categories}
         />
       </div>
     </MainLayout>

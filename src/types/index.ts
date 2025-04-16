@@ -1,4 +1,3 @@
-
 // Types for the restaurant management app
 
 export interface MenuItem {
@@ -6,7 +5,7 @@ export interface MenuItem {
   name: string;
   price: number;
   description: string;
-  category: string;
+  categoryId: string;
   image?: string;
   available: boolean;
 }
@@ -14,7 +13,7 @@ export interface MenuItem {
 export interface MenuCategory {
   id: string;
   name: string;
-  description?: string;
+  orderIndex: number;
 }
 
 export interface Table {
