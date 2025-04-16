@@ -22,7 +22,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const { createOrder } = useOrders();
   
   const [customerName, setCustomerName] = useState('');
-  const [tableId, setTableId] = useState(''); // Will store a valid UUID or empty string for takeout
+  const [tableId, setTableId] = useState('takeout'); // Using 'takeout' instead of empty string
   const [orderItems, setOrderItems] = useState<{
     menuItemId: string;
     name: string;
@@ -83,7 +83,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const handlePlaceOrder = async () => {
     try {
       await createOrder.mutateAsync({
-        tableId: tableId || null, // Send null for takeout orders, valid UUID for table orders
+        tableId: tableId === 'takeout' ? null : tableId, // Convert 'takeout' to null for the API
         customerName: customerName || undefined,
         items: orderItems.map(item => ({
           menuItemId: item.menuItemId,
@@ -95,7 +95,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
       // Reset form and close dialog
       setOrderItems([]);
       setCustomerName('');
-      setTableId('');
+      setTableId('takeout');
       onClose();
     } catch (error) {
       console.error('Error creating order:', error);
@@ -129,10 +129,10 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
               onValueChange={setTableId}
             >
               <SelectTrigger id="table-id" className="mt-1">
-                <SelectValue placeholder="Takeout (no table)" />
+                <SelectValue placeholder="Select table or takeout" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Takeout (no table)</SelectItem>
+                <SelectItem value="takeout">Takeout (no table)</SelectItem>
                 {tables?.map(table => (
                   <SelectItem key={table.id} value={table.id}>
                     {table.name} ({table.capacity} seats)
