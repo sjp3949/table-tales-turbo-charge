@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Table } from '@/types';
 import { useOrders } from '@/hooks/useOrders';
-import { mockMenuItems, mockOrders } from '@/data/mockData';
+import { useMenu } from '@/hooks/useMenu';
 import {
   Dialog,
   DialogContent,
@@ -36,13 +36,10 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
   const [customerName, setCustomerName] = useState('');
   
   const { createOrder } = useOrders();
-  
-  const categories = Array.from(
-    new Set(mockMenuItems.map(item => item.categoryId))
-  );
+  const { menuItems, categories, isLoading: isLoadingMenu } = useMenu();
   
   const getMenuItemsByCategory = (categoryId: string) => {
-    return mockMenuItems.filter(item => item.categoryId === categoryId);
+    return menuItems?.filter(item => item.categoryId === categoryId) || [];
   };
   
   const addItemToOrder = (menuItemId: string, name: string, price: number) => {
@@ -111,8 +108,6 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
   
   if (!table) return null;
   
-  const existingOrder = mockOrders.find(order => order.tableId === table.id);
-  
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
@@ -155,22 +150,17 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
               <div className="border rounded-md overflow-hidden">
                 <div className="bg-muted p-2 font-medium">Menu</div>
                 <ScrollArea className="h-[300px]">
-                  <div className="p-2">
-                    {categories.map(categoryId => {
-                      const categoryItems = getMenuItemsByCategory(categoryId);
-                      const categoryName = mockMenuItems
-                        .find(item => item.categoryId === categoryId)?.categoryId || categoryId;
-                      
-                      return (
-                        <div key={categoryId} className="mb-4">
-                          <h4 className="font-medium mb-2">
-                            {categoryName === 'cat1' ? 'Appetizers' : 
-                             categoryName === 'cat2' ? 'Main Course' :
-                             categoryName === 'cat3' ? 'Desserts' :
-                             categoryName === 'cat4' ? 'Beverages' : 'Other'}
-                          </h4>
+                  {isLoadingMenu ? (
+                    <div className="flex items-center justify-center p-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      {categories?.map(category => (
+                        <div key={category.id} className="mb-4">
+                          <h4 className="font-medium mb-2">{category.name}</h4>
                           <div className="space-y-2">
-                            {categoryItems.map(item => (
+                            {getMenuItemsByCategory(category.id).map(item => (
                               <div
                                 key={item.id}
                                 className="flex items-center justify-between rounded-md border p-2 text-sm hover:bg-muted/50 cursor-pointer"
@@ -179,7 +169,8 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                                 <div>
                                   <div className="font-medium">{item.name}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    {item.description?.substring(0, 30)}...
+                                    {item.description?.substring(0, 30)}
+                                    {item.description && item.description.length > 30 ? '...' : ''}
                                   </div>
                                 </div>
                                 <div className="font-medium">${item.price.toFixed(2)}</div>
@@ -187,9 +178,9 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                             ))}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </ScrollArea>
               </div>
               
