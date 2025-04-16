@@ -12,18 +12,7 @@ import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
-import { useAuth } from '@/components/auth/AuthContext';
-
-// Protected Route Component
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session } = useAuth();
-  
-  if (!session) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  return <>{children}</>;
-}
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 function AppRoutes() {
   return (

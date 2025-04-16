@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Bell, User, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/components/auth/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,15 +17,15 @@ export function AppHeader() {
     localStorage.getItem('theme') as 'light' | 'dark' || 'light'
   );
   const location = useLocation();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
-  // Get page title based on current route
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/') return 'Dashboard';
     return path.charAt(1).toUpperCase() + path.slice(2);
   };
 
-  // Toggle theme
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
@@ -38,7 +38,11 @@ export function AppHeader() {
     }
   };
 
-  // Set initial theme
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -55,12 +59,10 @@ export function AppHeader() {
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
           </Button>
           
-          {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
@@ -90,7 +92,6 @@ export function AppHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* User profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -103,7 +104,9 @@ export function AppHeader() {
               <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">Logout</DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
+                Sign Out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
