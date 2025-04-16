@@ -12,13 +12,15 @@ interface TableSection {
 export function useTables() {
   const queryClient = useQueryClient();
 
+  // Fetch sections - since we don't have a dedicated table_sections table in the database yet,
+  // we'll extract unique sections from the tables
   const { data: sections, isLoading: isLoadingSections } = useQuery({
     queryKey: ['table-sections'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('table_sections')
-        .select('*')
-        .order('name');
+        .from('tables')
+        .select('section')
+        .order('section');
       
       if (error) {
         toast({
@@ -29,7 +31,14 @@ export function useTables() {
         throw error;
       }
       
-      return data as TableSection[];
+      // Create unique sections from the data
+      const uniqueSections = Array.from(new Set(data.map(item => item.section)))
+        .map(sectionName => ({
+          id: sectionName, // Using section name as both id and name since we don't have section_id
+          name: sectionName
+        }));
+      
+      return uniqueSections as TableSection[];
     },
   });
 
@@ -54,7 +63,7 @@ export function useTables() {
         id: table.id,
         name: table.name,
         section: table.section,
-        sectionId: table.section_id || '',
+        sectionId: table.section, // Using section as sectionId
         sectionName: table.section,
         capacity: table.capacity,
         status: table.status as 'available' | 'occupied' | 'reserved',
@@ -106,14 +115,13 @@ export function useTables() {
       sectionId: string;
       capacity: number;
     }) => {
-      // Find the section name from the sections data
-      const sectionName = sections?.find(s => s.id === sectionId)?.name || '';
+      // In our simplified model, sectionId is the section name
+      const sectionName = sectionId;
       
       const { data, error } = await supabase
         .from('tables')
         .insert({
           name,
-          section_id: sectionId,
           section: sectionName,
           capacity,
           status: 'available',
