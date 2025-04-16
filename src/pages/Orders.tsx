@@ -8,12 +8,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Printer, AlertTriangle } from 'lucide-react';
+import { Printer, AlertTriangle, Plus } from 'lucide-react';
+import { CreateOrderDialog } from '@/components/orders/CreateOrderDialog';
 
 export default function Orders() {
   const { orders, isLoading, updateOrderStatus } = useOrders();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
   const [activeStatus, setActiveStatus] = useState('all');
   
   const handleViewDetails = (order: Order) => {
@@ -29,11 +31,17 @@ export default function Orders() {
   return (
     <MainLayout>
       <div className="space-y-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-          <p className="text-muted-foreground">
-            Manage your restaurant orders
-          </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+            <p className="text-muted-foreground">
+              Manage your restaurant orders
+            </p>
+          </div>
+          <Button onClick={() => setCreateOrderOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Order
+          </Button>
         </div>
         
         <Tabs 
@@ -154,6 +162,11 @@ export default function Orders() {
             </DialogContent>
           </Dialog>
         )}
+        
+        <CreateOrderDialog
+          open={createOrderOpen}
+          onClose={() => setCreateOrderOpen(false)}
+        />
       </div>
     </MainLayout>
   );
