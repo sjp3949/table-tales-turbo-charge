@@ -1,11 +1,13 @@
 
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Table, TableSection as TableSectionType } from '@/types';
+import { Table } from '@/types';
 import { TableSectionComponent } from '@/components/tables/TableSection';
 import { TableActionDialog } from '@/components/tables/TableActionDialog';
-import { mockTableSections } from '@/data/mockData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { useTables } from '@/hooks/useTables';
 import {
   Select,
   SelectContent,
@@ -13,47 +15,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Tables() {
-  const [tableSections, setTableSections] = useState(mockTableSections);
+  const { tables, sections, isLoading, addTable } = useTables();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(tableSections[0]?.id || '');
+  const [addTableDialogOpen, setAddTableDialogOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('');
+  
+  // Form state for adding new table
+  const [newTableName, setNewTableName] = useState('');
+  const [newTableSection, setNewTableSection] = useState('');
+  const [newTableCapacity, setNewTableCapacity] = useState(4);
   
   const handleTableSelect = (table: Table) => {
     setSelectedTable(table);
     setDialogOpen(true);
   };
   
-  const handleAddTable = (sectionId: string) => {
-    // This would open a dialog to add a new table in a real app
-    console.log(`Add table to section ${sectionId}`);
-    
-    // For demo purposes, add a dummy table
-    const section = tableSections.find(s => s.id === sectionId);
-    if (section) {
-      const newTable: Table = {
-        id: `table-${Date.now()}`,
-        name: `Table ${section.tables.length + 1}`,
-        section: sectionId,
-        capacity: 4,
-        status: 'available',
-        positionX: 150,
-        positionY: 150,
-      };
-      
-      const updatedSections = tableSections.map(s => 
-        s.id === sectionId
-          ? { ...s, tables: [...s.tables, newTable] }
-          : s
-      );
-      
-      setTableSections(updatedSections);
+  const handleAddTable = async () => {
+    try {
+      await addTable.mutateAsync({
+        name: newTableName,
+        sectionId: newTableSection,
+        capacity: newTableCapacity,
+      });
+      setAddTableDialogOpen(false);
+      setNewTableName('');
+      setNewTableSection('');
+      setNewTableCapacity(4);
+    } catch (error) {
+      console.error('Error adding table:', error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </MainLayout>
+    );
+  }
   
-  // Filter displayed sections based on active tab
-  const displayedSection = tableSections.find(s => s.id === activeTab) || tableSections[0];
+  // Group tables by section
+  const tablesBySection = sections?.map(section => ({
+    ...section,
+    tables: tables?.filter(table => table.sectionId === section.id) || [],
+  })) || [];
+  
+  // Get current section data
+  const currentSection = tablesBySection.find(s => s.id === activeSection) || tablesBySection[0];
   
   return (
     <MainLayout>
@@ -66,28 +82,33 @@ export default function Tables() {
             </p>
           </div>
           
-          {/* For smaller screens */}
-          <div className="w-full sm:hidden">
-            <Select value={activeTab} onValueChange={setActiveTab}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select section" />
-              </SelectTrigger>
-              <SelectContent>
-                {tableSections.map(section => (
-                  <SelectItem key={section.id} value={section.id}>
-                    {section.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Button onClick={() => setAddTableDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Table
+          </Button>
+        </div>
+        
+        {/* For smaller screens */}
+        <div className="w-full sm:hidden">
+          <Select value={activeSection} onValueChange={setActiveSection}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select section" />
+            </SelectTrigger>
+            <SelectContent>
+              {sections?.map(section => (
+                <SelectItem key={section.id} value={section.id}>
+                  {section.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         {/* Tabs for section navigation - Hidden on small screens */}
         <div className="hidden sm:block">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeSection} onValueChange={setActiveSection}>
             <TabsList className="w-full sm:w-auto">
-              {tableSections.map(section => (
+              {sections?.map(section => (
                 <TabsTrigger key={section.id} value={section.id} className="flex-1 sm:flex-initial">
                   {section.name}
                 </TabsTrigger>
@@ -97,11 +118,15 @@ export default function Tables() {
         </div>
         
         {/* Table section */}
-        {displayedSection && (
+        {currentSection && (
           <TableSectionComponent
-            section={displayedSection}
+            section={{
+              id: currentSection.id,
+              name: currentSection.name,
+              tables: currentSection.tables
+            }}
             onSelectTable={handleTableSelect}
-            onAddTable={handleAddTable}
+            onAddTable={() => setAddTableDialogOpen(true)}
           />
         )}
         
@@ -111,6 +136,60 @@ export default function Tables() {
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
         />
+        
+        {/* Add table dialog */}
+        <Dialog open={addTableDialogOpen} onOpenChange={setAddTableDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Table</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="table-name">Table Name</Label>
+                <Input
+                  id="table-name"
+                  value={newTableName}
+                  onChange={(e) => setNewTableName(e.target.value)}
+                  placeholder="e.g., Table 1"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="table-section">Section</Label>
+                <Select value={newTableSection} onValueChange={setNewTableSection}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sections?.map(section => (
+                      <SelectItem key={section.id} value={section.id}>
+                        {section.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="table-capacity">Capacity</Label>
+                <Input
+                  id="table-capacity"
+                  type="number"
+                  value={newTableCapacity}
+                  onChange={(e) => setNewTableCapacity(Number(e.target.value))}
+                  min={1}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button onClick={handleAddTable} disabled={!newTableName || !newTableSection}>
+                Add Table
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         
         {/* Legend */}
         <div className="flex flex-wrap gap-4 pt-4 border-t">

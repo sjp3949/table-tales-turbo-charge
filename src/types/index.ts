@@ -21,6 +21,8 @@ export interface Table {
   id: string;
   name: string;
   section: string;
+  sectionId: string;
+  sectionName: string;
   capacity: number;
   status: 'available' | 'occupied' | 'reserved';
   positionX: number;
