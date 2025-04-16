@@ -1,4 +1,3 @@
-
 // Types for the restaurant management app
 
 export interface MenuItem {
@@ -43,17 +42,6 @@ export interface OrderItem {
   notes?: string;
 }
 
-export interface Order {
-  id: string;
-  tableId?: string;
-  customerName?: string;
-  items: OrderItem[];
-  status: 'pending' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled';
-  createdAt: Date;
-  updatedAt: Date;
-  total: number;
-}
-
 export interface InventoryItem {
   id: string;
   name: string;
@@ -61,6 +49,8 @@ export interface InventoryItem {
   unit: string;
   threshold: number;
   cost: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface RecipeIngredient {

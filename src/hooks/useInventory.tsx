@@ -24,7 +24,7 @@ export function useInventory() {
         throw error;
       }
       
-      return data;
+      return data as InventoryItem[];
     },
   });
 
@@ -32,13 +32,19 @@ export function useInventory() {
     mutationFn: async (item: InventoryItem) => {
       const { data, error } = await supabase
         .from('inventory')
-        .update(item)
+        .update({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          threshold: item.threshold,
+          cost: item.cost
+        })
         .eq('id', item.id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return data as InventoryItem;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });

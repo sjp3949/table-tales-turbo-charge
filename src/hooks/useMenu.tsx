@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MenuItem, MenuCategory } from '@/types';
@@ -24,7 +23,10 @@ export function useMenu() {
         throw error;
       }
       
-      return data;
+      return data.map(item => ({
+        ...item,
+        available: item.is_available
+      }));
     },
   });
 
