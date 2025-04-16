@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTables } from '@/hooks/useTables';
 
 interface TableSectionProps {
   section: TableSection;
@@ -20,27 +21,38 @@ export function TableSectionComponent({
   const [isDragging, setIsDragging] = useState(false);
   const [draggedTable, setDraggedTable] = useState<Table | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { updateTablePosition } = useTables();
 
   const handleDragStart = (table: Table) => {
     setIsDragging(true);
     setDraggedTable(table);
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.preventDefault();
+    
+    if (containerRef.current && draggedTable) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newX = e.clientX - containerRect.left;
+      const newY = e.clientY - containerRect.top;
+      
+      // Only update if we have valid coordinates
+      if (newX >= 0 && newY >= 0) {
+        // Update the table position in the database
+        updateTablePosition.mutate({
+          tableId: draggedTable.id,
+          positionX: newX,
+          positionY: newY
+        });
+      }
+    }
+    
     setIsDragging(false);
     setDraggedTable(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (containerRef.current && draggedTable) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const newX = e.clientX - containerRect.left;
-      const newY = e.clientY - containerRect.top;
-      
-      // This would update the table position in a real app
-      console.log(`Table ${draggedTable.id} position: ${newX}, ${newY}`);
-    }
   };
 
   return (
@@ -69,7 +81,7 @@ export function TableSectionComponent({
             <div
               key={table.id}
               className={cn(
-                "restaurant-table absolute",
+                "restaurant-table absolute cursor-move",
                 table.status === 'available' && 'available',
                 table.status === 'occupied' && 'occupied',
                 table.status === 'reserved' && 'reserved'

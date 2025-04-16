@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Table } from '@/types';
@@ -18,6 +17,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import '../styles/tables.css'; // Import the new CSS
 
 export default function Tables() {
   const { tables, sections, isLoading, addTable, addSection } = useTables();
@@ -31,7 +31,6 @@ export default function Tables() {
   const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
 
-  // Set the active section when sections load or change
   useEffect(() => {
     if (sections && sections.length > 0 && !activeSection) {
       setActiveSection(sections[0].id);
@@ -65,7 +64,7 @@ export default function Tables() {
         name: newSectionName,
       });
       setAddSectionDialogOpen(false);
-      setActiveSection(newSectionName); // Set the active section to the new one
+      setActiveSection(newSectionName);
       setNewSectionName('');
     } catch (error) {
       console.error('Error adding section:', error);

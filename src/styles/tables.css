@@ -1,0 +1,36 @@
+
+.restaurant-table {
+  background-color: white;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: move;
+  user-select: none;
+  transition: box-shadow 0.2s ease;
+  z-index: 1;
+}
+
+.restaurant-table:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.restaurant-table.available {
+  border: 2px solid #22c55e;
+}
+
+.restaurant-table.occupied {
+  border: 2px solid #ef4444;
+}
+
+.restaurant-table.reserved {
+  border: 2px solid #eab308;
+}
+
+.restaurant-table.dragging {
+  opacity: 0.6;
+  z-index: 10;
+}
