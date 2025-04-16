@@ -7,15 +7,30 @@ import { MenuDialog } from '@/components/menu/MenuDialog';
 import { useMenu } from '@/hooks/useMenu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { PlusCircle, Search } from 'lucide-react';
 
 export default function Menu() {
-  const { menuItems, categories, isLoading, addMenuItem, updateMenuItem, deleteMenuItem } = useMenu();
+  const { menuItems, categories, isLoading, addMenuItem, updateMenuItem, deleteMenuItem, addCategory } = useMenu();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | undefined>(undefined);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   
   const handleAddItem = () => {
     setEditingItem(undefined);
@@ -34,6 +49,14 @@ export default function Menu() {
       addMenuItem.mutate(item);
     }
     setDialogOpen(false);
+  };
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      addCategory.mutate({ name: newCategoryName.trim() });
+      setCategoryDialogOpen(false);
+      setNewCategoryName('');
+    }
   };
   
   // Filter menu items by category and search query
@@ -55,13 +78,19 @@ export default function Menu() {
               Manage your restaurant menu items and categories
             </p>
           </div>
-          <Button onClick={handleAddItem}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Item
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setCategoryDialogOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+            <Button onClick={handleAddItem}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Item
+            </Button>
+          </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -72,20 +101,22 @@ export default function Menu() {
             />
           </div>
           
-          <Tabs 
-            value={activeCategory} 
+          <Select 
+            value={activeCategory}
             onValueChange={setActiveCategory}
-            className="w-full"
           >
-            <TabsList className="w-full sm:w-auto overflow-auto">
-              <TabsTrigger value="all">All Categories</TabsTrigger>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories?.map(category => (
-                <TabsTrigger key={category.id} value={category.id}>
+                <SelectItem key={category.id} value={category.id}>
                   {category.name}
-                </TabsTrigger>
+                </SelectItem>
               ))}
-            </TabsList>
-          </Tabs>
+            </SelectContent>
+          </Select>
         </div>
         
         {isLoading ? (
@@ -123,6 +154,27 @@ export default function Menu() {
           initialData={editingItem}
           categories={categories}
         />
+
+        <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Category</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                placeholder="Category name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCategoryDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddCategory}>Add Category</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

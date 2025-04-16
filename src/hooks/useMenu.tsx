@@ -173,6 +173,40 @@ export function useMenu() {
     },
   });
 
+  const addCategory = useMutation({
+    mutationFn: async (newCategory: { name: string }) => {
+      const { data, error } = await supabase
+        .from('menu_categories')
+        .insert([{
+          name: newCategory.name,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        orderIndex: data.order_index
+      } as MenuCategory;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu-categories'] });
+      toast({
+        title: 'Category added',
+        description: 'The category has been added successfully.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error adding category',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     menuItems,
     categories,
@@ -180,5 +214,6 @@ export function useMenu() {
     addMenuItem,
     updateMenuItem,
     deleteMenuItem,
+    addCategory,
   };
 }
