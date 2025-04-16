@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Table } from '@/types';
+import { useOrders } from '@/hooks/useOrders';
 import { mockMenuItems, mockOrders } from '@/data/mockData';
 import {
   Dialog,
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, Trash, Plus, Minus } from 'lucide-react';
+import { Check, Trash, Plus, Minus, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,9 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
     price: number;
     quantity: number;
   }[]>([]);
+  const [customerName, setCustomerName] = useState('');
+  
+  const { createOrder } = useOrders();
   
   const categories = Array.from(
     new Set(mockMenuItems.map(item => item.category))
@@ -83,6 +87,29 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
       0
     );
   };
+
+  const handlePlaceOrder = async () => {
+    if (!table) return;
+    
+    try {
+      await createOrder.mutateAsync({
+        tableId: table.id,
+        customerName: customerName || undefined,
+        items: orderItems.map(item => ({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          price: item.price
+        }))
+      });
+      
+      // Reset the form
+      setOrderItems([]);
+      setCustomerName('');
+      onClose();
+    } catch (error) {
+      console.error('Error creating order:', error);
+    }
+  };
   
   if (!table) return null;
   
@@ -117,6 +144,18 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
           
           <TabsContent value="order" className="flex-1 flex flex-col">
             <div className="grid grid-cols-2 gap-4 flex-1">
+              {/* Customer Name Input */}
+              <div className="col-span-2">
+                <Label htmlFor="customer-name">Customer Name (Optional)</Label>
+                <Input
+                  id="customer-name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Enter customer name"
+                  className="mt-1"
+                />
+              </div>
+              
               {/* Menu Items */}
               <div className="border rounded-md overflow-hidden">
                 <div className="bg-muted p-2 font-medium">Menu</div>
@@ -146,7 +185,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                                 <div>
                                   <div className="font-medium">{item.name}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    {item.description.substring(0, 30)}...
+                                    {item.description?.substring(0, 30)}...
                                   </div>
                                 </div>
                                 <div className="font-medium">${item.price.toFixed(2)}</div>
@@ -226,6 +265,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                     <Button
                       className="flex-1"
                       disabled={orderItems.length === 0}
+                      onClick={handlePlaceOrder}
                     >
                       Place Order
                     </Button>
@@ -235,7 +275,8 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                       className="flex-1"
                       disabled={orderItems.length === 0}
                     >
-                      Print Invoice
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print
                     </Button>
                   </div>
                 </div>
@@ -262,7 +303,9 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="table-status">Status</Label>
+                <Label htmlFor="table
+
+-status">Status</Label>
                 <div className="flex space-x-2">
                   <Button 
                     variant={table.status === 'available' ? 'default' : 'outline'}

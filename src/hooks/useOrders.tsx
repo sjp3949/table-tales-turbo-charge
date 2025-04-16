@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
@@ -34,7 +33,6 @@ export function useOrders() {
         throw error;
       }
       
-      // Transform the data to match our frontend types
       return ordersData.map(order => ({
         id: order.id,
         tableId: order.table_id,
@@ -52,6 +50,66 @@ export function useOrders() {
         updatedAt: new Date(order.created_at),
         total: order.total
       })) as Order[];
+    },
+  });
+
+  const createOrder = useMutation({
+    mutationFn: async ({ 
+      tableId, 
+      items, 
+      customerName 
+    }: { 
+      tableId: string; 
+      items: { menuItemId: string; quantity: number; price: number; notes?: string }[];
+      customerName?: string;
+    }) => {
+      const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert([{
+          table_id: tableId,
+          customer_name: customerName,
+          total,
+          subtotal: total,
+          order_type: 'dine_in',
+          order_number: Date.now().toString(),
+          status: 'pending'
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(
+          items.map(item => ({
+            order_id: orderData.id,
+            menu_item_id: item.menuItemId,
+            quantity: item.quantity,
+            price: item.price,
+            notes: item.notes
+          }))
+        );
+
+      if (itemsError) throw itemsError;
+
+      return orderData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: 'Order created',
+        description: 'The order has been created successfully.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error creating order',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 
@@ -86,7 +144,7 @@ export function useOrders() {
   return {
     orders,
     isLoading,
+    createOrder,
     updateOrderStatus,
   };
 }
-
