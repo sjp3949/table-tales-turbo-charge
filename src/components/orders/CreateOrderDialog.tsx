@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Minus, Trash } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CreateOrderDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const { createOrder } = useOrders();
   
   const [customerName, setCustomerName] = useState('');
+  const [tableId, setTableId] = useState('takeout'); // Default to 'takeout' for orders without a table
   const [orderItems, setOrderItems] = useState<{
     menuItemId: string;
     name: string;
@@ -79,6 +81,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const handlePlaceOrder = async () => {
     try {
       await createOrder.mutateAsync({
+        tableId: tableId, // Include the tableId in the order creation
         customerName: customerName || undefined,
         items: orderItems.map(item => ({
           menuItemId: item.menuItemId,
@@ -90,6 +93,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
       // Reset form and close dialog
       setOrderItems([]);
       setCustomerName('');
+      setTableId('takeout');
       onClose();
     } catch (error) {
       console.error('Error creating order:', error);
@@ -113,6 +117,26 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
               placeholder="Enter customer name"
               className="mt-1"
             />
+          </div>
+          
+          {/* Add table selection */}
+          <div className="col-span-2">
+            <Label htmlFor="table-id">Table or Takeout</Label>
+            <Select 
+              value={tableId} 
+              onValueChange={setTableId}
+            >
+              <SelectTrigger id="table-id" className="mt-1">
+                <SelectValue placeholder="Select a table or takeout" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="takeout">Takeout</SelectItem>
+                <SelectItem value="table1">Table 1</SelectItem>
+                <SelectItem value="table2">Table 2</SelectItem>
+                <SelectItem value="table3">Table 3</SelectItem>
+                <SelectItem value="table4">Table 4</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           {/* Menu Items */}
