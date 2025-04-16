@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
@@ -14,7 +13,14 @@ export function useOrders() {
         .from('orders')
         .select(`
           *,
-          order_items (*)
+          order_items (
+            id,
+            menu_item_id,
+            price,
+            quantity,
+            notes,
+            menu_items (name)
+          )
         `)
         .order('created_at', { ascending: false });
       
@@ -32,7 +38,14 @@ export function useOrders() {
         id: order.id,
         tableId: order.table_id,
         customerName: order.customer_name,
-        items: order.order_items as OrderItem[],
+        items: (order.order_items || []).map(item => ({
+          id: item.id,
+          menuItemId: item.menu_item_id,
+          name: item.menu_items?.name || 'Unknown Item',
+          price: item.price,
+          quantity: item.quantity,
+          notes: item.notes
+        })) as OrderItem[],
         status: order.status,
         createdAt: new Date(order.created_at),
         updatedAt: new Date(order.created_at), // Using created_at as Supabase doesn't have updated_at
