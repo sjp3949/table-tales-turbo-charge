@@ -66,6 +66,9 @@ export function useOrders() {
     }) => {
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
+      // Set correct order_type value - must be either 'dine_in' or 'takeout'
+      const orderType = tableId ? 'dine_in' : 'takeout';
+      
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([{
@@ -73,14 +76,17 @@ export function useOrders() {
           customer_name: customerName,
           total,
           subtotal: total,
-          order_type: tableId ? 'dine_in' : 'takeout',
+          order_type: orderType,
           order_number: Date.now().toString(),
           status: 'pending'
         }])
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw orderError;
+      }
 
       const { error: itemsError } = await supabase
         .from('order_items')
