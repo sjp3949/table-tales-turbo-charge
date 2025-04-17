@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,7 @@ import { ChartBarIcon, CalendarDaysIcon, ChartPieIcon, FileTextIcon } from 'luci
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year'>('week');
-  const { inventory, reports, isLoadingReports } = useInventory();
+  const { inventory, reports, isLoadingReports: isLoadingInventoryReports } = useInventory();
   const { 
     salesByDay, 
     popularItems, 
@@ -22,7 +21,7 @@ export default function Reports() {
     totalOrders, 
     salesTrend, 
     ordersTrend,
-    isLoading: isLoadingReports
+    isLoading: isLoadingSalesReports
   } = useReports(dateRange);
   
   // Prepare data for inventory value by category chart
@@ -107,7 +106,7 @@ export default function Reports() {
               <CardDescription>{dateRangeText[dateRange]}</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingReports ? (
+              {isLoadingSalesReports ? (
                 <div className="h-9 w-24 animate-pulse rounded bg-muted"></div>
               ) : (
                 <>
@@ -137,7 +136,7 @@ export default function Reports() {
               <CardDescription>{dateRangeText[dateRange]}</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingReports ? (
+              {isLoadingSalesReports ? (
                 <div className="h-9 w-16 animate-pulse rounded bg-muted"></div>
               ) : (
                 <>
@@ -201,7 +200,7 @@ export default function Reports() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
-              {isLoadingReports ? (
+              {isLoadingSalesReports ? (
                 <div className="h-80 w-full flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -213,15 +212,10 @@ export default function Reports() {
             </CardContent>
           </Card>
           
-          <Card className="col-span-2 md:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ChartPieIcon className="h-4 w-4" />
-                Inventory Value by Category
-              </CardTitle>
-              <CardDescription>
-                Current inventory value distribution
-              </CardDescription>
+          <Card>
+            <CardHeader className="py-4">
+              <CardTitle className="text-md">Inventory Value by Category</CardTitle>
+              <CardDescription>Current inventory value distribution</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
@@ -302,7 +296,7 @@ export default function Reports() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingReports ? (
+                {isLoadingSalesReports ? (
                   <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -311,34 +305,7 @@ export default function Reports() {
                     No sales data available for the selected period.
                   </div>
                 ) : (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[50%]">Item</TableHead>
-                          <TableHead className="text-center">Quantity</TableHead>
-                          <TableHead className="text-center">Price</TableHead>
-                          <TableHead className="text-right">Revenue</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {popularItems.map((item, index) => (
-                          <TableRow key={item.itemId}>
-                            <TableCell className="font-medium">
-                              {index + 1}. {item.name}
-                            </TableCell>
-                            <TableCell className="text-center">{item.count}</TableCell>
-                            <TableCell className="text-center">
-                              ${(item.revenue / item.count).toFixed(2)}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              ${item.revenue.toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                  <PopularItems items={popularItems} />
                 )}
               </CardContent>
             </Card>
@@ -353,7 +320,7 @@ export default function Reports() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingReports ? (
+                {isLoadingInventoryReports ? (
                   <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>

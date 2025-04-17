@@ -75,12 +75,12 @@ export function useReports(dateRange: 'day' | 'week' | 'month' | 'year' = 'week'
 
         // Get previous period for comparison (for trend calculation)
         const previousPeriodStart = new Date(startDate);
-        const previousPeriodEnd = new Date(startDate);
+        let previousPeriodEnd = new Date();
         
         switch(dateRange) {
           case 'day':
             previousPeriodStart.setDate(previousPeriodStart.getDate() - 1);
-            previousPeriodEnd.setDate(previousPeriodEnd.getDate() - 1);
+            previousPeriodEnd = new Date(previousPeriodStart);
             previousPeriodEnd.setHours(23, 59, 59, 999);
             break;
           case 'week':
