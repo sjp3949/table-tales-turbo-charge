@@ -3,7 +3,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+// Changed from named export to default export
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const navigate = useNavigate();
 
