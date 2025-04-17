@@ -11,7 +11,7 @@ import { DollarSign, Users, ShoppingBag, CreditCard, ChefHat, ClipboardList, Ale
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year'>('day');
-  const { tableData } = useTables();
+  const { tables, sections, isLoading: isLoadingTables } = useTables();
   const { 
     salesByDay, 
     popularItems, 
@@ -23,16 +23,9 @@ export default function Dashboard() {
   } = useReports(dateRange);
   
   // Calculate total tables and occupied tables
-  const totalTables = tableData ? tableData.reduce(
-    (acc, section) => acc + section.tables.length,
-    0
-  ) : 0;
+  const totalTables = tables ? tables.length : 0;
   
-  const occupiedTables = tableData ? tableData.reduce(
-    (acc, section) => 
-      acc + section.tables.filter(t => t.status === 'occupied').length,
-    0
-  ) : 0;
+  const occupiedTables = tables ? tables.filter(table => table.status === 'occupied').length : 0;
 
   // Calculate average order value
   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
@@ -103,7 +96,7 @@ export default function Dashboard() {
         </div>
         
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {isLoading ? (
+          {isLoading || isLoadingTables ? (
             <>
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
