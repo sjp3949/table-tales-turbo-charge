@@ -36,6 +36,19 @@ export interface TableSection {
   tables: Table[];
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  email?: string;
+  phone: string;
+  address?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  totalOrders: number;
+  totalSpent: number;
+}
+
 export interface OrderItem {
   id: string;
   menuItemId: string;
@@ -48,7 +61,9 @@ export interface OrderItem {
 export interface Order {
   id: string;
   tableId?: string;
+  customerId?: string;
   customerName?: string;
+  customerPhone?: string;
   items: OrderItem[];
   status: 'pending' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled';
   createdAt: Date;

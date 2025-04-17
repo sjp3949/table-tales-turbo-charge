@@ -1,11 +1,14 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { useSettings } from './useSettings';
+import { useCustomers } from './useCustomers';
 
 export function useOrders() {
   const queryClient = useQueryClient();
+  const { settings } = useSettings();
+  const { createCustomer } = useCustomers();
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders'],
@@ -37,7 +40,9 @@ export function useOrders() {
       return ordersData.map(order => ({
         id: order.id,
         tableId: order.table_id,
+        customerId: order.customer_id,
         customerName: order.customer_name,
+        customerPhone: order.customer_phone,
         items: (order.order_items || []).map(item => ({
           id: item.id,
           menuItemId: item.menu_item_id,
@@ -58,23 +63,49 @@ export function useOrders() {
     mutationFn: async ({ 
       tableId, 
       items, 
-      customerName 
+      customerName,
+      customerPhone,
+      customerEmail
     }: { 
       tableId: string | null; 
       items: { menuItemId: string; quantity: number; price: number; notes?: string }[];
       customerName?: string;
+      customerPhone?: string;
+      customerEmail?: string;
     }) => {
-      const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      // Check if customer details are required
+      if (settings?.requireCustomerDetails && (!customerName || !customerPhone)) {
+        throw new Error('Customer name and phone are required');
+      }
       
+      const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       const orderType = tableId ? 'dine-in' : 'takeout';
       
-      console.log('Creating order with type:', orderType, 'tableId:', tableId);
+      let customerId = null;
+      
+      // Process customer information if provided
+      if (customerPhone) {
+        try {
+          const customerData = await createCustomer.mutateAsync({
+            name: customerName || 'Guest',
+            phone: customerPhone,
+            email: customerEmail
+          });
+          
+          customerId = customerData.id;
+        } catch (error) {
+          console.error('Error processing customer:', error);
+          // Continue with order creation even if customer processing fails
+        }
+      }
       
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([{
           table_id: tableId, 
+          customer_id: customerId,
           customer_name: customerName,
+          customer_phone: customerPhone,
           total,
           subtotal: total,
           order_type: orderType,
@@ -102,6 +133,21 @@ export function useOrders() {
         );
 
       if (itemsError) throw itemsError;
+      
+      // Update customer stats
+      if (customerId) {
+        try {
+          const { error: updateError } = await supabase.rpc('update_customer_stats', {
+            p_customer_id: customerId
+          });
+          
+          if (updateError) {
+            console.error('Error updating customer stats:', updateError);
+          }
+        } catch (error) {
+          console.error('Error calling update_customer_stats:', error);
+        }
+      }
 
       return orderData;
     },
@@ -169,7 +215,6 @@ export function useOrders() {
     },
   });
 
-  // New function to handle printing an invoice
   const printInvoice = (order: Order) => {
     // Create a new window for printing
     const printWindow = window.open('', '_blank');

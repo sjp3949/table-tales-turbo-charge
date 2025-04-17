@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { 
   Card, 
@@ -15,27 +14,91 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Check } from 'lucide-react';
+import { Check, AlertTriangle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
+  const { settings, isLoading, updateSettings } = useSettings();
+  
   const [restaurantName, setRestaurantName] = useState('Restaurant Pro');
   const [receiptFooter, setReceiptFooter] = useState('Thank you for dining with us!');
+  const [taxRate, setTaxRate] = useState('8.25');
+  const [serviceCharge, setServiceCharge] = useState('0');
+  const [requireCustomerDetails, setRequireCustomerDetails] = useState(false);
   const [notifications, setNotifications] = useState({
     newOrder: true,
     lowInventory: true,
     dailySummary: false,
   });
   
-  const handleSaveGeneral = () => {
-    // In a real app, save changes to API
-    console.log('Saving general settings:', { restaurantName, receiptFooter });
+  useEffect(() => {
+    if (settings) {
+      setRestaurantName(settings.restaurantName || 'Restaurant Pro');
+      setReceiptFooter(settings.receiptFooter || 'Thank you for dining with us!');
+      setTaxRate(settings.taxRate?.toString() || '8.25');
+      setServiceCharge(settings.serviceCharge?.toString() || '0');
+      setRequireCustomerDetails(settings.requireCustomerDetails || false);
+      setNotifications({
+        newOrder: settings.notifications?.newOrder ?? true,
+        lowInventory: settings.notifications?.lowInventory ?? true,
+        dailySummary: settings.notifications?.dailySummary ?? false,
+      });
+    }
+  }, [settings]);
+  
+  const handleSaveGeneral = async () => {
+    try {
+      await updateSettings.mutateAsync({
+        restaurantName,
+        receiptFooter,
+        taxRate: parseFloat(taxRate),
+        serviceCharge: parseFloat(serviceCharge),
+        requireCustomerDetails,
+      });
+      
+      toast({
+        title: "Settings saved",
+        description: "General settings updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving settings",
+        description: "There was a problem updating settings",
+        variant: "destructive"
+      });
+    }
   };
   
-  const handleSaveNotifications = () => {
-    // In a real app, save changes to API
-    console.log('Saving notification settings:', notifications);
+  const handleSaveNotifications = async () => {
+    try {
+      await updateSettings.mutateAsync({
+        notifications
+      });
+      
+      toast({
+        title: "Settings saved",
+        description: "Notification settings updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving settings",
+        description: "There was a problem updating settings",
+        variant: "destructive"
+      });
+    }
   };
+  
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-80">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </MainLayout>
+    );
+  }
   
   return (
     <MainLayout>
@@ -94,7 +157,8 @@ export default function Settings() {
                     id="tax-rate"
                     type="number"
                     step="0.01"
-                    defaultValue="8.25"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(e.target.value)}
                   />
                 </div>
                 
@@ -104,7 +168,24 @@ export default function Settings() {
                     id="service-charge"
                     type="number"
                     step="0.01"
-                    defaultValue="0"
+                    value={serviceCharge}
+                    onChange={(e) => setServiceCharge(e.target.value)}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="require-customer">Require Customer Details</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Make customer information mandatory when creating orders
+                    </p>
+                  </div>
+                  <Switch
+                    id="require-customer"
+                    checked={requireCustomerDetails}
+                    onCheckedChange={setRequireCustomerDetails}
                   />
                 </div>
               </CardContent>

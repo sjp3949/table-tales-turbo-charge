@@ -1,7 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Table } from '@/types';
 import { useOrders } from '@/hooks/useOrders';
 import { useMenu } from '@/hooks/useMenu';
+import { useSettings } from '@/hooks/useSettings';
+import { useCustomers } from '@/hooks/useCustomers';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, Trash, Plus, Minus, Printer, Save, CheckSquare } from 'lucide-react';
+import { Check, Trash, Plus, Minus, Printer, Save, CheckSquare, Search, User, Phone, Mail, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -30,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Customer } from '@/types';
 
 interface TableActionDialogProps {
   table: Table | null;
@@ -41,6 +45,8 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
   const { orders, updateOrderStatus, printInvoice } = useOrders();
   const { menuItems, categories, isLoading: isLoadingMenu } = useMenu();
   const { updateTableStatus } = useTables();
+  const { settings } = useSettings();
+  const { findCustomerByPhone } = useCustomers();
   
   const existingOrder = table ? orders?.find(order => 
     order.tableId === table.id && 
@@ -63,14 +69,29 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
     quantity: number;
   }[]>([]);
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerFound, setCustomerFound] = useState<Customer | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [tableStatus, setTableStatus] = useState<'available' | 'occupied' | 'reserved'>('available');
   const [confirmMakeAvailableOpen, setConfirmMakeAvailableOpen] = useState(false);
+  
+  const customerRequired = settings?.requireCustomerDetails || false;
   
   useEffect(() => {
     if (table) {
       setTableStatus(table.status);
+      
+      // Reset customer info and order items when the dialog opens
+      if (open) {
+        setCustomerName('');
+        setCustomerPhone('');
+        setCustomerEmail('');
+        setCustomerFound(null);
+        setOrderItems([]);
+      }
     }
-  }, [table]);
+  }, [table, open]);
   
   const { createOrder } = useOrders();
   
@@ -119,14 +140,80 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
       0
     );
   };
+  
+  const handleSearchCustomer = async () => {
+    if (!customerPhone || customerPhone.length < 10) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number with at least 10 digits",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSearching(true);
+    
+    try {
+      const customer = await findCustomerByPhone(customerPhone);
+      
+      if (customer) {
+        setCustomerFound(customer);
+        setCustomerName(customer.name);
+        setCustomerEmail(customer.email || '');
+        
+        toast({
+          title: "Customer found",
+          description: `Found existing customer: ${customer.name}`,
+        });
+      } else {
+        setCustomerFound(null);
+        
+        toast({
+          title: "New customer",
+          description: "This appears to be a new customer",
+        });
+      }
+    } catch (error) {
+      console.error('Error searching for customer:', error);
+      toast({
+        title: "Error searching",
+        description: "There was a problem searching for the customer",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handlePlaceOrder = async () => {
     if (!table) return;
     
     try {
+      // Validate customer info if required
+      if (customerRequired && (!customerName || !customerPhone)) {
+        toast({
+          title: "Customer information required",
+          description: "Please provide customer name and phone number",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate order items
+      if (orderItems.length === 0) {
+        toast({
+          title: "Empty order",
+          description: "Please add at least one item to the order",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       await createOrder.mutateAsync({
         tableId: table.id,
         customerName: customerName || undefined,
+        customerPhone: customerPhone || undefined,
+        customerEmail: customerEmail || undefined,
         items: orderItems.map(item => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
@@ -136,6 +223,8 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
       
       setOrderItems([]);
       setCustomerName('');
+      setCustomerPhone('');
+      setCustomerEmail('');
       onClose();
     } catch (error) {
       console.error('Error creating order:', error);
@@ -244,15 +333,75 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
             
             <TabsContent value="order" className="flex-1 flex flex-col">
               <div className="grid grid-cols-2 gap-4 flex-1">
-                <div className="col-span-2">
-                  <Label htmlFor="customer-name">Customer Name (Optional)</Label>
-                  <Input
-                    id="customer-name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter customer name"
-                    className="mt-1"
-                  />
+                <div className="col-span-2 border rounded-md p-3">
+                  <div className="font-medium mb-3">Customer Information {customerRequired && <span className="text-destructive">*</span>}</div>
+                  <div className="grid gap-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Label htmlFor="customer-phone" className="mb-1 block">Phone Number</Label>
+                        <div className="flex">
+                          <Input
+                            id="customer-phone"
+                            value={customerPhone}
+                            onChange={(e) => setCustomerPhone(e.target.value)}
+                            placeholder="Enter phone number"
+                            className="rounded-r-none"
+                            required={customerRequired}
+                          />
+                          <Button 
+                            variant="secondary" 
+                            className="rounded-l-none" 
+                            onClick={handleSearchCustomer}
+                            disabled={isSearching || !customerPhone}
+                          >
+                            {isSearching ? (
+                              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                            ) : (
+                              <Search className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="customer-name" className="mb-1 block">Customer Name</Label>
+                      <div className="flex">
+                        <User className="h-4 w-4 text-muted-foreground mr-2 self-center" />
+                        <Input
+                          id="customer-name"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          placeholder="Enter customer name"
+                          required={customerRequired}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="customer-email" className="mb-1 block">Email (Optional)</Label>
+                      <div className="flex">
+                        <Mail className="h-4 w-4 text-muted-foreground mr-2 self-center" />
+                        <Input
+                          id="customer-email"
+                          type="email"
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          placeholder="Enter email address"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {customerFound && (
+                    <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                      <div className="font-medium">Existing Customer</div>
+                      <div className="text-muted-foreground">
+                        {customerFound.totalOrders} previous order(s) | 
+                        Total spent: ₹{customerFound.totalSpent.toFixed(2)}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="border rounded-md overflow-hidden">
@@ -281,7 +430,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                                       {item.description && item.description.length > 30 ? '...' : ''}
                                     </div>
                                   </div>
-                                  <div className="font-medium">${item.price.toFixed(2)}</div>
+                                  <div className="font-medium">₹{item.price.toFixed(2)}</div>
                                 </div>
                               ))}
                             </div>
@@ -356,7 +505,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                     <div className="flex space-x-2">
                       <Button
                         className="flex-1"
-                        disabled={orderItems.length === 0}
+                        disabled={orderItems.length === 0 || (customerRequired && (!customerName || !customerPhone))}
                         onClick={handlePlaceOrder}
                       >
                         Place Order
@@ -371,6 +520,13 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                         Print
                       </Button>
                     </div>
+                    
+                    {customerRequired && (!customerName || !customerPhone) && (
+                      <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        <span>Customer information is required</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -476,6 +632,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                       {existingOrder.customerName && (
                         <div className="mt-2 text-sm text-muted-foreground">
                           Customer: {existingOrder.customerName}
+                          {existingOrder.customerPhone && ` (${existingOrder.customerPhone})`}
                         </div>
                       )}
                     </div>

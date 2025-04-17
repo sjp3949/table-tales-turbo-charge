@@ -1,14 +1,21 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useMenu } from '@/hooks/useMenu';
 import { useOrders } from '@/hooks/useOrders';
 import { useTables } from '@/hooks/useTables';
+import { useSettings } from '@/hooks/useSettings';
+import { useCustomers } from '@/hooks/useCustomers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Minus, Trash } from 'lucide-react';
+import { Plus, Minus, Trash, Search, User, Phone, Mail, AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Customer } from '@/types';
+import { toast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 
 interface CreateOrderDialogProps {
   open: boolean;
@@ -19,8 +26,14 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
   const { menuItems, isLoading: isLoadingMenu } = useMenu();
   const { tables, isLoading: isLoadingTables } = useTables();
   const { createOrder } = useOrders();
+  const { settings } = useSettings();
+  const { findCustomerByPhone } = useCustomers();
   
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerFound, setCustomerFound] = useState<Customer | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [tableId, setTableId] = useState('takeout'); // Special value for takeout orders
   const [orderItems, setOrderItems] = useState<{
     menuItemId: string;
@@ -28,6 +41,20 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
     price: number;
     quantity: number;
   }[]>([]);
+  
+  const customerRequired = settings?.requireCustomerDetails || false;
+  
+  // Reset form state when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setCustomerName('');
+      setCustomerPhone('');
+      setCustomerEmail('');
+      setCustomerFound(null);
+      setTableId('takeout');
+      setOrderItems([]);
+    }
+  }, [open]);
   
   const categories = Array.from(
     new Set(menuItems?.map(item => item.categoryId) || [])
@@ -78,14 +105,80 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
       0
     );
   };
+  
+  const handleSearchCustomer = async () => {
+    if (!customerPhone || customerPhone.length < 10) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number with at least 10 digits",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSearching(true);
+    
+    try {
+      const customer = await findCustomerByPhone(customerPhone);
+      
+      if (customer) {
+        setCustomerFound(customer);
+        setCustomerName(customer.name);
+        setCustomerEmail(customer.email || '');
+        
+        toast({
+          title: "Customer found",
+          description: `Found existing customer: ${customer.name}`,
+        });
+      } else {
+        setCustomerFound(null);
+        
+        toast({
+          title: "New customer",
+          description: "This appears to be a new customer",
+        });
+      }
+    } catch (error) {
+      console.error('Error searching for customer:', error);
+      toast({
+        title: "Error searching",
+        description: "There was a problem searching for the customer",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handlePlaceOrder = async () => {
     try {
+      // Validate customer info if required
+      if (customerRequired && (!customerName || !customerPhone)) {
+        toast({
+          title: "Customer information required",
+          description: "Please provide customer name and phone number",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate order items
+      if (orderItems.length === 0) {
+        toast({
+          title: "Empty order",
+          description: "Please add at least one item to the order",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const actualTableId = tableId === 'takeout' ? null : tableId;
       
       await createOrder.mutateAsync({
         tableId: actualTableId,
         customerName: customerName || undefined,
+        customerPhone: customerPhone || undefined,
+        customerEmail: customerEmail || undefined,
         items: orderItems.map(item => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
@@ -95,6 +188,8 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
       
       setOrderItems([]);
       setCustomerName('');
+      setCustomerPhone('');
+      setCustomerEmail('');
       setTableId('takeout');
       onClose();
     } catch (error) {
@@ -110,15 +205,75 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 flex-1">
-          <div className="col-span-2">
-            <Label htmlFor="customer-name">Customer Name (Optional)</Label>
-            <Input
-              id="customer-name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Enter customer name"
-              className="mt-1"
-            />
+          <div className="col-span-2 border rounded-md p-3">
+            <div className="font-medium mb-3">Customer Information {customerRequired && <span className="text-destructive">*</span>}</div>
+            <div className="grid gap-3">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="customer-phone" className="mb-1 block">Phone Number</Label>
+                  <div className="flex">
+                    <Input
+                      id="customer-phone"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="Enter phone number"
+                      className="rounded-r-none"
+                      required={customerRequired}
+                    />
+                    <Button 
+                      variant="secondary" 
+                      className="rounded-l-none" 
+                      onClick={handleSearchCustomer}
+                      disabled={isSearching || !customerPhone}
+                    >
+                      {isSearching ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="customer-name" className="mb-1 block">Customer Name</Label>
+                <div className="flex">
+                  <User className="h-4 w-4 text-muted-foreground mr-2 self-center" />
+                  <Input
+                    id="customer-name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Enter customer name"
+                    required={customerRequired}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="customer-email" className="mb-1 block">Email (Optional)</Label>
+                <div className="flex">
+                  <Mail className="h-4 w-4 text-muted-foreground mr-2 self-center" />
+                  <Input
+                    id="customer-email"
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="Enter email address"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {customerFound && (
+              <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                <div className="font-medium">Existing Customer</div>
+                <div className="text-muted-foreground">
+                  {customerFound.totalOrders} previous order(s) | 
+                  Total spent: ₹{customerFound.totalSpent.toFixed(2)}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Table selection */}
@@ -163,7 +318,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
                               {item.description?.substring(0, 30)}...
                             </div>
                           </div>
-                          <div className="font-medium">${item.price.toFixed(2)}</div>
+                          <div className="font-medium">₹{item.price.toFixed(2)}</div>
                         </div>
                       ))}
                     </div>
@@ -192,7 +347,7 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
                         <div className="flex-1">
                           <div className="font-medium">{item.name}</div>
                           <div className="text-xs text-muted-foreground">
-                            ${item.price.toFixed(2)} x {item.quantity}
+                            ₹{item.price.toFixed(2)} x {item.quantity}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -232,16 +387,23 @@ export function CreateOrderDialog({ open, onClose }: CreateOrderDialogProps) {
             <div className="border-t p-2">
               <div className="flex justify-between font-medium mb-2">
                 <span>Total</span>
-                <span>${calculateTotal().toFixed(2)}</span>
+                <span>₹{calculateTotal().toFixed(2)}</span>
               </div>
               
               <Button
                 className="w-full"
-                disabled={orderItems.length === 0}
+                disabled={orderItems.length === 0 || (customerRequired && (!customerName || !customerPhone))}
                 onClick={handlePlaceOrder}
               >
                 Place Order
               </Button>
+              
+              {customerRequired && (!customerName || !customerPhone) && (
+                <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Customer information is required</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
