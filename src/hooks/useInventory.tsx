@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { InventoryItem, InventoryTransaction } from '@/types';
+import { InventoryItem, InventoryTransaction, InventoryReport } from '@/types';
 import { toast } from '@/hooks/use-toast';
 
 export function useInventory() {
@@ -58,6 +58,79 @@ export function useInventory() {
         notes: transaction.notes,
         createdAt: new Date(transaction.created_at),
       })) as InventoryTransaction[];
+    },
+  });
+
+  const { data: reports, isLoading: isLoadingReports } = useQuery({
+    queryKey: ['inventory-reports'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        toast({
+          title: 'Error fetching reports',
+          description: error.message,
+          variant: 'destructive',
+        });
+        throw error;
+      }
+      
+      return data.map(report => ({
+        id: report.id,
+        reportType: report.report_type,
+        reportDate: new Date(report.report_date),
+        summary: report.summary,
+        createdAt: new Date(report.created_at),
+      })) as InventoryReport[];
+    },
+  });
+
+  const addInventoryItem = useMutation({
+    mutationFn: async (item: InventoryItem) => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .insert({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          threshold: item.threshold,
+          cost: item.cost
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Record the transaction
+      await supabase
+        .from('inventory_transactions')
+        .insert({
+          inventory_id: data.id,
+          previous_quantity: 0,
+          new_quantity: item.quantity,
+          transaction_type: 'restock',
+          notes: `Initial inventory for ${item.name}`
+        });
+      
+      return data as InventoryItem;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
+      toast({
+        title: 'Item added',
+        description: 'The new inventory item has been added successfully.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error adding item',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 
@@ -161,10 +234,11 @@ export function useInventory() {
         createdAt: new Date(data.created_at),
       };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-reports'] });
       toast({
         title: 'Report generated',
-        description: 'Inventory report has been successfully generated.',
+        description: `${data.reportType.charAt(0).toUpperCase() + data.reportType.slice(1)} inventory report has been successfully generated.`,
       });
     },
     onError: (error) => {
@@ -181,6 +255,9 @@ export function useInventory() {
     isLoading,
     transactions,
     isLoadingTransactions,
+    reports,
+    isLoadingReports,
+    addInventoryItem,
     updateInventoryItem,
     generateInventoryReport,
   };

@@ -65,6 +65,7 @@ export interface InventoryItem {
   cost: number;
   created_at?: string;
   updated_at?: string;
+  available?: boolean;
 }
 
 export interface InventoryTransaction {
@@ -96,18 +97,6 @@ export interface InventoryReport {
     generatedAt: string;
   };
   createdAt: Date;
-}
-
-export interface RecipeIngredient {
-  id: string;
-  inventoryItemId: string;
-  quantity: number;
-}
-
-export interface Recipe {
-  id: string;
-  menuItemId: string;
-  ingredients: RecipeIngredient[];
 }
 
 export interface DailySales {

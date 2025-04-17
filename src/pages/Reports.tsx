@@ -1,15 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { mockDashboardStats } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { useInventory } from '@/hooks/useInventory';
 import { supabase } from '@/integrations/supabase/client';
 
-// Mock data for reports
+// Mock data for sales reports (will be replaced with actual data in future)
 const salesData = [
   { name: 'Monday', sales: 4000 },
   { name: 'Tuesday', sales: 3000 },
@@ -24,32 +22,7 @@ const COLORS = ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'];
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState('week');
-  const [inventoryReports, setInventoryReports] = useState<any[]>([]);
-  const [isLoadingReports, setIsLoadingReports] = useState(false);
-  const { inventory } = useInventory();
-  
-  useEffect(() => {
-    const fetchInventoryReports = async () => {
-      setIsLoadingReports(true);
-      try {
-        const { data, error } = await supabase
-          .from('inventory_reports')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10);
-          
-        if (error) throw error;
-        
-        setInventoryReports(data);
-      } catch (error) {
-        console.error('Error fetching inventory reports:', error);
-      } finally {
-        setIsLoadingReports(false);
-      }
-    };
-    
-    fetchInventoryReports();
-  }, []);
+  const { inventory, reports, isLoadingReports } = useInventory();
   
   // Prepare data for inventory value by category chart
   const inventoryValueByCategory = inventory ? 
@@ -68,7 +41,21 @@ export default function Reports() {
     .slice(0, 5);
   
   // Recent report
-  const latestReport = inventoryReports.length > 0 ? inventoryReports[0] : null;
+  const latestReport = reports && reports.length > 0 ? reports[0] : null;
+  
+  // Calculate low stock items
+  const lowStockCount = inventory?.filter(item => item.quantity <= item.threshold).length || 0;
+  
+  // Calculate total inventory value
+  const totalInventoryValue = inventory?.reduce((sum, item) => sum + (item.quantity * item.cost), 0) || 0;
+  
+  // Fetch sales data (currently mocked)
+  const [salesStats, setSalesStats] = useState({
+    totalSales: 7349.30,
+    totalOrders: 324,
+    salesTrend: 12.5,
+    ordersTrend: 8.3
+  });
   
   return (
     <MainLayout>
@@ -102,10 +89,10 @@ export default function Reports() {
               <CardDescription>Past 7 days</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$7,349.30</div>
+              <div className="text-2xl font-bold">${salesStats.totalSales.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded px-1 py-0.5 text-xs font-medium mr-1">
-                  +12.5%
+                  +{salesStats.salesTrend}%
                 </span>
                 vs previous period
               </p>
@@ -118,10 +105,10 @@ export default function Reports() {
               <CardDescription>Past 7 days</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">324</div>
+              <div className="text-2xl font-bold">{salesStats.totalOrders}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded px-1 py-0.5 text-xs font-medium mr-1">
-                  +8.3%
+                  +{salesStats.ordersTrend}%
                 </span>
                 vs previous period
               </p>
@@ -135,7 +122,7 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${inventory?.reduce((sum, item) => sum + (item.quantity * item.cost), 0).toFixed(2) || '0.00'}
+                ${totalInventoryValue.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {inventory?.length || 0} items in stock
@@ -150,7 +137,7 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {inventory?.filter(item => item.quantity <= item.threshold).length || 0}
+                {lowStockCount}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Items requiring attention
@@ -353,9 +340,9 @@ export default function Reports() {
                   <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
-                ) : inventoryReports.length === 0 ? (
+                ) : !reports || reports.length === 0 ? (
                   <div className="text-center p-8 text-muted-foreground">
-                    No inventory reports have been generated yet.
+                    No inventory reports have been generated yet. Generate a report from the Inventory page.
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -364,7 +351,7 @@ export default function Reports() {
                         <CardHeader>
                           <CardTitle className="text-base">Latest Inventory Summary</CardTitle>
                           <CardDescription>
-                            {new Date(latestReport.created_at).toLocaleString()}
+                            {latestReport.createdAt.toLocaleString()}
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -426,19 +413,19 @@ export default function Reports() {
                         <div className="col-span-2">Low Stock</div>
                         <div className="col-span-2 text-right">Value</div>
                       </div>
-                      {inventoryReports.map((report, index) => (
+                      {reports.map((report, index) => (
                         <div 
                           key={report.id}
                           className={cn(
                             "grid grid-cols-12 p-3 text-sm",
-                            index !== inventoryReports.length - 1 && "border-b"
+                            index !== reports.length - 1 && "border-b"
                           )}
                         >
                           <div className="col-span-2 font-medium capitalize">
-                            {report.report_type}
+                            {report.reportType}
                           </div>
                           <div className="col-span-3">
-                            {new Date(report.created_at).toLocaleDateString()}
+                            {report.createdAt.toLocaleDateString()}
                           </div>
                           <div className="col-span-3">
                             {report.summary?.totalItems || 'N/A'}

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { InventoryItemCard } from '@/components/inventory/InventoryItem';
 import { InventoryTransactionList } from '@/components/inventory/InventoryTransactions';
+import { AddInventoryItemDialog } from '@/components/inventory/AddInventoryItemDialog';
 import { useInventory } from '@/hooks/useInventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,7 @@ export default function Inventory() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('items');
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   // Filter inventory items
   const filteredItems = inventory?.filter(item => {
@@ -74,7 +76,7 @@ export default function Inventory() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Item
             </Button>
@@ -155,6 +157,12 @@ export default function Inventory() {
             </Dialog>
           </div>
         </div>
+        
+        {/* Add Inventory Item Dialog */}
+        <AddInventoryItemDialog 
+          isOpen={isAddDialogOpen} 
+          onClose={() => setIsAddDialogOpen(false)} 
+        />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full sm:w-auto">
