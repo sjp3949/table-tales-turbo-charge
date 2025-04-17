@@ -7,11 +7,15 @@ import { PopularItems } from '@/components/dashboard/PopularItems';
 import { TableStatus } from '@/components/dashboard/TableStatus';
 import { useReports } from '@/hooks/useReports';
 import { useTables } from '@/hooks/useTables';
+import { useOrders } from '@/hooks/useOrders';
+import { useInventory } from '@/hooks/useInventory';
 import { DollarSign, Users, ShoppingBag, CreditCard, ChefHat, ClipboardList, AlertTriangle } from 'lucide-react';
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const { tables, sections, isLoading: isLoadingTables } = useTables();
+  const { orders, isLoading: isLoadingOrders } = useOrders();
+  const { inventory, isLoading: isLoadingInventory } = useInventory();
   const { 
     salesByDay, 
     popularItems, 
@@ -29,6 +33,16 @@ export default function Dashboard() {
 
   // Calculate average order value
   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+  
+  // Get active orders (pending and preparing)
+  const activeOrders = orders?.filter(order => 
+    ['pending', 'preparing'].includes(order.status)
+  ).slice(0, 3) || [];
+  
+  // Get low stock inventory items
+  const lowStockItems = inventory?.filter(item => 
+    item.quantity <= item.threshold
+  ).slice(0, 3) || [];
   
   return (
     <MainLayout>
@@ -96,7 +110,7 @@ export default function Dashboard() {
         </div>
         
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {isLoading || isLoadingTables ? (
+          {isLoading || isLoadingTables || isLoadingOrders || isLoadingInventory ? (
             <>
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
@@ -108,56 +122,73 @@ export default function Dashboard() {
               
               <div className="dashboard-card space-y-4">
                 <h3 className="font-medium">Active Orders</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-                    <div className="flex items-center gap-2">
-                      <ChefHat className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                      <div>
-                        <div className="font-medium">Table 2</div>
-                        <div className="text-xs text-muted-foreground">Preparing (15m)</div>
+                {activeOrders.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No active orders at the moment.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {activeOrders.map(order => (
+                      <div key={order.id} className={`flex items-center justify-between p-2 rounded border ${
+                        order.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' : 
+                        'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          {order.status === 'pending' ? (
+                            <ChefHat className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                          ) : (
+                            <ClipboardList className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          )}
+                          <div>
+                            <div className="font-medium">
+                              {order.tableId ? `Table ${order.tableId}` : `Takeout #${order.id.substring(0, 4)}`}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {order.status === 'pending' ? 'Pending' : 'Preparing'} 
+                              ({Math.floor((new Date().getTime() - new Date(order.createdAt).getTime()) / 60000)}m)
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium">${order.total.toFixed(2)}</div>
                       </div>
-                    </div>
-                    <div className="text-sm font-medium">$49.95</div>
+                    ))}
                   </div>
-                  
-                  <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <div>
-                        <div className="font-medium">Takeout #42</div>
-                        <div className="text-xs text-muted-foreground">Ready (5m)</div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium">$24.98</div>
-                  </div>
-                </div>
+                )}
               </div>
               
               <div className="dashboard-card space-y-4">
                 <h3 className="font-medium">Inventory Alerts</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                      <div>
-                        <div className="font-medium">Chicken Breast</div>
-                        <div className="text-xs text-muted-foreground">Low stock (2kg left)</div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium">Reorder</div>
+                {lowStockItems.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No inventory alerts at the moment.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {lowStockItems.map(item => {
+                      const percentRemaining = (item.quantity / item.threshold) * 100;
+                      const isVeryLow = item.quantity < item.threshold * 0.5;
+                      
+                      return (
+                        <div key={item.id} className={`flex items-center justify-between p-2 rounded border ${
+                          isVeryLow ? 
+                            'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 
+                            'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className={`h-4 w-4 ${
+                              isVeryLow ? 
+                                'text-red-600 dark:text-red-400' : 
+                                'text-yellow-600 dark:text-yellow-400'
+                            }`} />
+                            <div>
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {isVeryLow ? 'Very low' : 'Low stock'} ({item.quantity} {item.unit} left)
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-sm font-medium">Reorder</div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  
-                  <div className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                      <div>
-                        <div className="font-medium">Tomatoes</div>
-                        <div className="text-xs text-muted-foreground">Very low (0.5kg left)</div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium">Reorder</div>
-                  </div>
-                </div>
+                )}
               </div>
             </>
           )}
