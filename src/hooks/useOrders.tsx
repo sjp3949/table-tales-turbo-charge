@@ -5,6 +5,32 @@ import { toast } from '@/hooks/use-toast';
 import { useSettings } from './useSettings';
 import { useCustomers } from './useCustomers';
 
+interface OrderRow {
+  id: string;
+  table_id: string | null;
+  customer_id: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  total: number;
+  subtotal: number;
+  order_type: string;
+  order_number: string;
+  status: string;
+  created_at: string;
+  order_items?: OrderItemRow[];
+}
+
+interface OrderItemRow {
+  id: string;
+  menu_item_id: string;
+  price: number;
+  quantity: number;
+  notes: string | null;
+  menu_items?: {
+    name: string;
+  };
+}
+
 export function useOrders() {
   const queryClient = useQueryClient();
   const { settings } = useSettings();
@@ -37,7 +63,7 @@ export function useOrders() {
         throw error;
       }
       
-      return ordersData.map(order => ({
+      return (ordersData as OrderRow[]).map(order => ({
         id: order.id,
         tableId: order.table_id,
         customerId: order.customer_id,
@@ -73,7 +99,6 @@ export function useOrders() {
       customerPhone?: string;
       customerEmail?: string;
     }) => {
-      // Check if customer details are required
       if (settings?.requireCustomerDetails && (!customerName || !customerPhone)) {
         throw new Error('Customer name and phone are required');
       }
@@ -83,7 +108,6 @@ export function useOrders() {
       
       let customerId = null;
       
-      // Process customer information if provided
       if (customerPhone) {
         try {
           const customerData = await createCustomer.mutateAsync({
@@ -95,7 +119,6 @@ export function useOrders() {
           customerId = customerData.id;
         } catch (error) {
           console.error('Error processing customer:', error);
-          // Continue with order creation even if customer processing fails
         }
       }
       
@@ -134,7 +157,6 @@ export function useOrders() {
 
       if (itemsError) throw itemsError;
       
-      // Update customer stats
       if (customerId) {
         try {
           const { error: updateError } = await supabase.rpc('update_customer_stats', {
@@ -179,18 +201,13 @@ export function useOrders() {
 
       if (error) throw error;
       
-      // If order is completed, we could potentially reduce inventory here
-      // This would connect to inventory management
       if (status === 'completed') {
         try {
-          // Get the order items to know what was used
           const { data: orderItems } = await supabase
             .from('order_items')
             .select('id, menu_item_id, quantity')
             .eq('order_id', id);
             
-          // In a real application, you would look up recipe data to know
-          // what inventory items were used for each menu item
           console.log('Order completed - could update inventory based on these items:', orderItems);
         } catch (err) {
           console.error('Error processing inventory for completed order:', err);
@@ -216,7 +233,6 @@ export function useOrders() {
   });
 
   const printInvoice = (order: Order) => {
-    // Create a new window for printing
     const printWindow = window.open('', '_blank');
     
     if (!printWindow) {
@@ -228,7 +244,6 @@ export function useOrders() {
       return;
     }
     
-    // Create the invoice HTML content
     const invoiceHTML = `
       <!DOCTYPE html>
       <html>
@@ -291,7 +306,6 @@ export function useOrders() {
         </div>
         <script>
           window.onload = function() {
-            // Auto print for convenience
             setTimeout(() => window.print(), 500);
           }
         </script>
@@ -299,7 +313,6 @@ export function useOrders() {
       </html>
     `;
     
-    // Write the HTML to the new window and trigger printing
     printWindow.document.open();
     printWindow.document.write(invoiceHTML);
     printWindow.document.close();

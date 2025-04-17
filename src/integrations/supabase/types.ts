@@ -294,6 +294,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          customer_id: string | null
           customer_name: string | null
           customer_phone: string | null
           discount_percent: number
@@ -308,6 +309,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           discount_percent?: number
@@ -322,6 +324,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           discount_percent?: number
@@ -335,6 +338,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_table_id_fkey"
             columns: ["table_id"]
             isOneToOne: false
@@ -342,6 +352,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      settings: {
+        Row: {
+          created_at: string
+          id: string
+          notifications: Json | null
+          receipt_footer: string | null
+          require_customer_details: boolean | null
+          restaurant_name: string | null
+          service_charge: number | null
+          tax_rate: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notifications?: Json | null
+          receipt_footer?: string | null
+          require_customer_details?: boolean | null
+          restaurant_name?: string | null
+          service_charge?: number | null
+          tax_rate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notifications?: Json | null
+          receipt_footer?: string | null
+          require_customer_details?: boolean | null
+          restaurant_name?: string | null
+          service_charge?: number | null
+          tax_rate?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       tables: {
         Row: {

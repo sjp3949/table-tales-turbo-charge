@@ -1,6 +1,24 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+
+// Define type for raw settings data from Supabase
+type SettingsRow = {
+  id: string;
+  restaurant_name: string | null;
+  receipt_footer: string | null;
+  tax_rate: number | null;
+  service_charge: number | null;
+  require_customer_details: boolean | null;
+  notifications: {
+    newOrder?: boolean;
+    lowInventory?: boolean;
+    dailySummary?: boolean;
+  } | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export interface Settings {
   id?: string;
@@ -17,6 +35,29 @@ export interface Settings {
   created_at?: string;
   updated_at?: string;
 }
+
+// Helper to convert from DB row to Settings interface
+const mapSettingsRowToSettings = (row: SettingsRow): Settings => ({
+  id: row.id,
+  restaurantName: row.restaurant_name || undefined,
+  receiptFooter: row.receipt_footer || undefined,
+  taxRate: row.tax_rate || undefined,
+  serviceCharge: row.service_charge || undefined,
+  requireCustomerDetails: row.require_customer_details || undefined,
+  notifications: row.notifications || undefined,
+  created_at: row.created_at,
+  updated_at: row.updated_at
+});
+
+// Helper to convert from Settings interface to DB row
+const mapSettingsToRow = (settings: Partial<Settings>): Partial<SettingsRow> => ({
+  restaurant_name: settings.restaurantName,
+  receipt_footer: settings.receiptFooter,
+  tax_rate: settings.taxRate,
+  service_charge: settings.serviceCharge,
+  require_customer_details: settings.requireCustomerDetails,
+  notifications: settings.notifications
+});
 
 export function useSettings() {
   const queryClient = useQueryClient();
@@ -40,7 +81,7 @@ export function useSettings() {
         throw error;
       }
       
-      return data as Settings || null;
+      return data ? mapSettingsRowToSettings(data as SettingsRow) : null;
     },
   });
 
@@ -50,31 +91,24 @@ export function useSettings() {
       if (settings?.id) {
         const { data, error } = await supabase
           .from('settings')
-          .update({
-            ...newSettings,
-            updated_at: new Date().toISOString(),
-          })
+          .update(mapSettingsToRow(newSettings))
           .eq('id', settings.id)
           .select()
           .single();
 
         if (error) throw error;
-        return data;
+        return mapSettingsRowToSettings(data as SettingsRow);
       } 
       // Otherwise, create new settings
       else {
         const { data, error } = await supabase
           .from('settings')
-          .insert([{
-            ...newSettings,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }])
+          .insert([mapSettingsToRow(newSettings)])
           .select()
           .single();
 
         if (error) throw error;
-        return data;
+        return mapSettingsRowToSettings(data as SettingsRow);
       }
     },
     onSuccess: () => {
