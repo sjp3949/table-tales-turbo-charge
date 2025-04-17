@@ -1,11 +1,13 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { mockDashboardStats } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { useInventory } from '@/hooks/useInventory';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock data for reports
 const salesData = [
@@ -18,18 +20,55 @@ const salesData = [
   { name: 'Sunday', sales: 3490 },
 ];
 
-const categoryData = [
-  { name: 'Main Course', value: 42 },
-  { name: 'Appetizers', value: 28 },
-  { name: 'Beverages', value: 15 },
-  { name: 'Desserts', value: 10 },
-  { name: 'Sides', value: 5 },
-];
-
 const COLORS = ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'];
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState('week');
+  const [inventoryReports, setInventoryReports] = useState<any[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+  const { inventory } = useInventory();
+  
+  useEffect(() => {
+    const fetchInventoryReports = async () => {
+      setIsLoadingReports(true);
+      try {
+        const { data, error } = await supabase
+          .from('inventory_reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        if (error) throw error;
+        
+        setInventoryReports(data);
+      } catch (error) {
+        console.error('Error fetching inventory reports:', error);
+      } finally {
+        setIsLoadingReports(false);
+      }
+    };
+    
+    fetchInventoryReports();
+  }, []);
+  
+  // Prepare data for inventory value by category chart
+  const inventoryValueByCategory = inventory ? 
+    Object.entries(
+      inventory.reduce((acc: Record<string, number>, item) => {
+        // Using the first word of the item name as a simple category
+        const category = item.name.split(' ')[0];
+        acc[category] = (acc[category] || 0) + (item.quantity * item.cost);
+        return acc;
+      }, {})
+    ).map(([name, value]) => ({ name, value })) : [];
+  
+  // Sort by value and take top 5
+  const topInventoryCategories = [...inventoryValueByCategory]
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+  
+  // Recent report
+  const latestReport = inventoryReports.length > 0 ? inventoryReports[0] : null;
   
   return (
     <MainLayout>
@@ -91,29 +130,30 @@ export default function Reports() {
           
           <Card>
             <CardHeader className="py-4">
-              <CardTitle className="text-md">Average Order</CardTitle>
-              <CardDescription>Past 7 days</CardDescription>
+              <CardTitle className="text-md">Inventory Value</CardTitle>
+              <CardDescription>Current total</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$22.68</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded px-1 py-0.5 text-xs font-medium mr-1">
-                  +4.2%
-                </span>
-                vs previous period
+              <div className="text-2xl font-bold">
+                ${inventory?.reduce((sum, item) => sum + (item.quantity * item.cost), 0).toFixed(2) || '0.00'}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {inventory?.length || 0} items in stock
               </p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="py-4">
-              <CardTitle className="text-md">Top Item</CardTitle>
-              <CardDescription>Most ordered item</CardDescription>
+              <CardTitle className="text-md">Low Stock Items</CardTitle>
+              <CardDescription>Below threshold</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold">Chicken Alfredo</div>
+              <div className="text-2xl font-bold">
+                {inventory?.filter(item => item.quantity <= item.threshold).length || 0}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Ordered 37 times
+                Items requiring attention
               </p>
             </CardContent>
           </Card>
@@ -193,9 +233,9 @@ export default function Reports() {
           
           <Card className="col-span-2 md:col-span-1">
             <CardHeader>
-              <CardTitle>Sales by Category</CardTitle>
+              <CardTitle>Inventory Value by Category</CardTitle>
               <CardDescription>
-                Revenue breakdown by menu category
+                Current inventory value distribution
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -203,7 +243,7 @@ export default function Reports() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={categoryData}
+                      data={topInventoryCategories}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -212,7 +252,7 @@ export default function Reports() {
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {categoryData.map((entry, index) => (
+                      {topInventoryCategories.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -232,10 +272,10 @@ export default function Reports() {
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="text-[0.70rem] uppercase text-muted-foreground">
-                                    Orders
+                                    Value
                                   </span>
                                   <span className="font-bold text-xs">
-                                    {payload[0].value}
+                                    ${Number(payload[0].value).toFixed(2)}
                                   </span>
                                 </div>
                               </div>
@@ -253,44 +293,171 @@ export default function Reports() {
           </Card>
         </div>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Popular Items</CardTitle>
-            <CardDescription>
-              Top selling items by revenue
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <div className="grid grid-cols-12 border-b p-3 text-sm font-medium">
-                <div className="col-span-6">Item</div>
-                <div className="col-span-2 text-center">Quantity</div>
-                <div className="col-span-2 text-center">Price</div>
-                <div className="col-span-2 text-right">Revenue</div>
-              </div>
-              {mockDashboardStats.popularItems.map((item, index) => (
-                <div 
-                  key={item.itemId}
-                  className={cn(
-                    "grid grid-cols-12 p-3 text-sm",
-                    index !== mockDashboardStats.popularItems.length - 1 && "border-b"
-                  )}
-                >
-                  <div className="col-span-6 font-medium">
-                    {index + 1}. {item.name}
+        <Tabs defaultValue="popular">
+          <TabsList className="grid w-full md:w-auto grid-cols-2 md:flex">
+            <TabsTrigger value="popular">Popular Items</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory Reports</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="popular">
+            <Card>
+              <CardHeader>
+                <CardTitle>Popular Items</CardTitle>
+                <CardDescription>
+                  Top selling items by revenue
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <div className="grid grid-cols-12 border-b p-3 text-sm font-medium">
+                    <div className="col-span-6">Item</div>
+                    <div className="col-span-2 text-center">Quantity</div>
+                    <div className="col-span-2 text-center">Price</div>
+                    <div className="col-span-2 text-right">Revenue</div>
                   </div>
-                  <div className="col-span-2 text-center">{item.count}</div>
-                  <div className="col-span-2 text-center">
-                    ${(item.revenue / item.count).toFixed(2)}
-                  </div>
-                  <div className="col-span-2 text-right font-medium">
-                    ${item.revenue.toFixed(2)}
-                  </div>
+                  {mockDashboardStats.popularItems.map((item, index) => (
+                    <div 
+                      key={item.itemId}
+                      className={cn(
+                        "grid grid-cols-12 p-3 text-sm",
+                        index !== mockDashboardStats.popularItems.length - 1 && "border-b"
+                      )}
+                    >
+                      <div className="col-span-6 font-medium">
+                        {index + 1}. {item.name}
+                      </div>
+                      <div className="col-span-2 text-center">{item.count}</div>
+                      <div className="col-span-2 text-center">
+                        ${(item.revenue / item.count).toFixed(2)}
+                      </div>
+                      <div className="col-span-2 text-right font-medium">
+                        ${item.revenue.toFixed(2)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="inventory">
+            <Card>
+              <CardHeader>
+                <CardTitle>Inventory Reports</CardTitle>
+                <CardDescription>
+                  Recently generated inventory reports
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingReports ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : inventoryReports.length === 0 ? (
+                  <div className="text-center p-8 text-muted-foreground">
+                    No inventory reports have been generated yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {latestReport && latestReport.summary && (
+                      <Card className="bg-muted/20">
+                        <CardHeader>
+                          <CardTitle className="text-base">Latest Inventory Summary</CardTitle>
+                          <CardDescription>
+                            {new Date(latestReport.created_at).toLocaleString()}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium">Total Items</p>
+                              <p className="text-2xl font-bold">{latestReport.summary.totalItems}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Total Value</p>
+                              <p className="text-2xl font-bold">${Number(latestReport.summary.totalValue).toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Low Stock Items</p>
+                              <p className="text-2xl font-bold">{latestReport.summary.lowStockCount}</p>
+                            </div>
+                          </div>
+                          
+                          {latestReport.summary.lowStockCount > 0 && (
+                            <div className="mt-4">
+                              <p className="text-sm font-medium mb-2">Items Requiring Attention</p>
+                              <div className="rounded-md border">
+                                <div className="grid grid-cols-12 border-b p-2 text-xs font-medium">
+                                  <div className="col-span-6">Item</div>
+                                  <div className="col-span-3 text-center">Quantity</div>
+                                  <div className="col-span-3 text-center">Threshold</div>
+                                </div>
+                                {latestReport.summary.lowStockItems.map((item: any, index: number) => (
+                                  <div 
+                                    key={item.id}
+                                    className={cn(
+                                      "grid grid-cols-12 p-2 text-xs",
+                                      index !== latestReport.summary.lowStockItems.length - 1 && "border-b"
+                                    )}
+                                  >
+                                    <div className="col-span-6 font-medium">
+                                      {item.name}
+                                    </div>
+                                    <div className="col-span-3 text-center text-yellow-600 dark:text-yellow-400">
+                                      {item.quantity} {item.unit}
+                                    </div>
+                                    <div className="col-span-3 text-center">
+                                      {item.threshold} {item.unit}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                    
+                    <div className="rounded-md border">
+                      <div className="grid grid-cols-12 border-b p-3 text-sm font-medium">
+                        <div className="col-span-2">Type</div>
+                        <div className="col-span-3">Date</div>
+                        <div className="col-span-3">Items</div>
+                        <div className="col-span-2">Low Stock</div>
+                        <div className="col-span-2 text-right">Value</div>
+                      </div>
+                      {inventoryReports.map((report, index) => (
+                        <div 
+                          key={report.id}
+                          className={cn(
+                            "grid grid-cols-12 p-3 text-sm",
+                            index !== inventoryReports.length - 1 && "border-b"
+                          )}
+                        >
+                          <div className="col-span-2 font-medium capitalize">
+                            {report.report_type}
+                          </div>
+                          <div className="col-span-3">
+                            {new Date(report.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="col-span-3">
+                            {report.summary?.totalItems || 'N/A'}
+                          </div>
+                          <div className="col-span-2">
+                            {report.summary?.lowStockCount || 'N/A'}
+                          </div>
+                          <div className="col-span-2 text-right font-medium">
+                            ${report.summary?.totalValue ? Number(report.summary.totalValue).toFixed(2) : 'N/A'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );

@@ -42,6 +42,71 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_reports: {
+        Row: {
+          created_at: string
+          id: string
+          report_date: string
+          report_type: string
+          summary: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          report_date?: string
+          report_type: string
+          summary?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          report_date?: string
+          report_type?: string
+          summary?: Json | null
+        }
+        Relationships: []
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_id: string
+          new_quantity: number
+          notes: string | null
+          previous_quantity: number
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_id: string
+          new_quantity: number
+          notes?: string | null
+          previous_quantity: number
+          transaction_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_id?: string
+          new_quantity?: number
+          notes?: string | null
+          previous_quantity?: number
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_categories: {
         Row: {
           created_at: string

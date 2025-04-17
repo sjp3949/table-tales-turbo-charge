@@ -132,6 +132,25 @@ export function useOrders() {
         .single();
 
       if (error) throw error;
+      
+      // If order is completed, we could potentially reduce inventory here
+      // This would connect to inventory management
+      if (status === 'completed') {
+        try {
+          // Get the order items to know what was used
+          const { data: orderItems } = await supabase
+            .from('order_items')
+            .select('id, menu_item_id, quantity')
+            .eq('order_id', id);
+            
+          // In a real application, you would look up recipe data to know
+          // what inventory items were used for each menu item
+          console.log('Order completed - could update inventory based on these items:', orderItems);
+        } catch (err) {
+          console.error('Error processing inventory for completed order:', err);
+        }
+      }
+      
       return data;
     },
     onSuccess: () => {

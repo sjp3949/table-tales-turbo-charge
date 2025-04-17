@@ -1,3 +1,4 @@
+
 // Types for the restaurant management app
 
 export interface MenuItem {
@@ -64,6 +65,37 @@ export interface InventoryItem {
   cost: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface InventoryTransaction {
+  id: string;
+  inventoryId: string;
+  itemName: string;
+  previousQuantity: number;
+  newQuantity: number;
+  transactionType: string;
+  notes?: string;
+  createdAt: Date;
+}
+
+export interface InventoryReport {
+  id: string;
+  reportType: string;
+  reportDate: Date;
+  summary: {
+    totalItems: number;
+    lowStockCount: number;
+    lowStockItems: Array<{
+      id: string;
+      name: string;
+      quantity: number;
+      threshold: number;
+      unit: string;
+    }>;
+    totalValue: number;
+    generatedAt: string;
+  };
+  createdAt: Date;
 }
 
 export interface RecipeIngredient {
