@@ -105,6 +105,33 @@ export function useTables() {
     },
   });
 
+  const updateTableStatus = useMutation({
+    mutationFn: async ({ 
+      tableId, 
+      status 
+    }: { 
+      tableId: string; 
+      status: 'available' | 'occupied' | 'reserved'; 
+    }) => {
+      const { error } = await supabase
+        .from('tables')
+        .update({ status })
+        .eq('id', tableId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tables'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error updating table status',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const addTable = useMutation({
     mutationFn: async ({ 
       name, 
@@ -197,7 +224,8 @@ export function useTables() {
     sections,
     isLoading: isLoadingTables || isLoadingSections,
     updateTablePosition,
+    updateTableStatus,
     addTable,
-    addSection, // Export the new addSection function
+    addSection,
   };
 }

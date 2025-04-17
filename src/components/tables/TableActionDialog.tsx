@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Table } from '@/types';
 import { useOrders } from '@/hooks/useOrders';
 import { useMenu } from '@/hooks/useMenu';
@@ -15,10 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, Trash, Plus, Minus, Printer } from 'lucide-react';
+import { Check, Trash, Plus, Minus, Printer, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useTables } from '@/hooks/useTables';
+import { toast } from '@/hooks/use-toast';
 
 interface TableActionDialogProps {
   table: Table | null;
@@ -27,7 +29,26 @@ interface TableActionDialogProps {
 }
 
 export function TableActionDialog({ table, open, onClose }: TableActionDialogProps) {
-  const [activeTab, setActiveTab] = useState('order');
+  const { orders } = useOrders();
+  const { menuItems, categories, isLoading: isLoadingMenu } = useMenu();
+  const { updateTableStatus } = useTables();
+  
+  // Find the existing order for this table if any
+  const existingOrder = table ? orders?.find(order => 
+    order.tableId === table.id && 
+    order.status !== 'completed' && 
+    order.status !== 'cancelled'
+  ) : null;
+  
+  // Set the active tab based on table status
+  const [activeTab, setActiveTab] = useState<string>('order');
+  
+  useEffect(() => {
+    if (table) {
+      setActiveTab(table.status === 'available' ? 'order' : 'info');
+    }
+  }, [table]);
+  
   const [orderItems, setOrderItems] = useState<{
     menuItemId: string;
     name: string;
@@ -35,12 +56,15 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
     quantity: number;
   }[]>([]);
   const [customerName, setCustomerName] = useState('');
+  const [tableStatus, setTableStatus] = useState<'available' | 'occupied' | 'reserved'>('available');
   
-  const { createOrder, orders } = useOrders();
-  const { menuItems, categories, isLoading: isLoadingMenu } = useMenu();
+  useEffect(() => {
+    if (table) {
+      setTableStatus(table.status);
+    }
+  }, [table]);
   
-  // Find the existing order for this table if any
-  const existingOrder = table ? orders?.find(order => order.tableId === table.id) : null;
+  const { createOrder } = useOrders();
   
   const getMenuItemsByCategory = (categoryId: string) => {
     return menuItems?.filter(item => item.categoryId === categoryId) || [];
@@ -110,6 +134,31 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
     }
   };
   
+  const handleSaveStatus = async () => {
+    if (!table) return;
+    
+    try {
+      await updateTableStatus.mutateAsync({
+        tableId: table.id,
+        status: tableStatus
+      });
+      
+      toast({
+        title: "Status updated",
+        description: `Table status changed to ${tableStatus}`,
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Error updating table status:', error);
+      toast({
+        title: "Error updating status",
+        description: "There was a problem updating the table status",
+        variant: "destructive"
+      });
+    }
+  };
+  
   if (!table) return null;
   
   return (
@@ -134,8 +183,18 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="order">Order</TabsTrigger>
-            <TabsTrigger value="info">Table Info</TabsTrigger>
+            <TabsTrigger 
+              value="order" 
+              disabled={table.status !== 'available'}
+            >
+              Order
+            </TabsTrigger>
+            <TabsTrigger 
+              value="info"
+              disabled={table.status === 'available' && !existingOrder}
+            >
+              Table Info
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="order" className="flex-1 flex flex-col">
@@ -294,25 +353,43 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                 <Label htmlFor="table-status">Status</Label>
                 <div className="flex space-x-2">
                   <Button 
-                    variant={table.status === 'available' ? 'default' : 'outline'}
+                    variant={tableStatus === 'available' ? 'default' : 'outline'}
                     className="flex-1"
+                    onClick={() => setTableStatus('available')}
+                    disabled={!!existingOrder}
                   >
                     Available
                   </Button>
                   <Button 
-                    variant={table.status === 'occupied' ? 'default' : 'outline'}
+                    variant={tableStatus === 'occupied' ? 'default' : 'outline'}
                     className="flex-1"
+                    onClick={() => setTableStatus('occupied')}
                   >
                     Occupied
                   </Button>
                   <Button 
-                    variant={table.status === 'reserved' ? 'default' : 'outline'}
+                    variant={tableStatus === 'reserved' ? 'default' : 'outline'}
                     className="flex-1"
+                    onClick={() => setTableStatus('reserved')}
                   >
                     Reserved
                   </Button>
                 </div>
+                {existingOrder && (
+                  <p className="text-sm text-amber-600 mt-1">
+                    Table has an active order and cannot be marked as available
+                  </p>
+                )}
               </div>
+              
+              <Button 
+                className="w-full mt-4" 
+                onClick={handleSaveStatus}
+                disabled={tableStatus === table.status}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Status
+              </Button>
               
               {existingOrder && (
                 <div className="border rounded-md p-3 mt-4">
@@ -329,6 +406,11 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                       <span>Total</span>
                       <span>${existingOrder.total.toFixed(2)}</span>
                     </div>
+                    {existingOrder.customerName && (
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        Customer: {existingOrder.customerName}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
