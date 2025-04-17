@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -113,6 +112,6 @@
   }
 
   .dashboard-card {
-    @apply bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 h-full;
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm p-5;
   }
 }

@@ -25,13 +25,12 @@ export function PopularItems({ items, isLoading = false }: PopularItemsProps) {
   }
   
   return (
-    <div className="rounded-md border">
+    <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[50%]">Item</TableHead>
-            <TableHead className="text-center">Quantity</TableHead>
-            <TableHead className="text-center">Price</TableHead>
+            <TableHead>Item</TableHead>
+            <TableHead className="text-center">Qty</TableHead>
             <TableHead className="text-right">Revenue</TableHead>
           </TableRow>
         </TableHeader>
@@ -42,9 +41,6 @@ export function PopularItems({ items, isLoading = false }: PopularItemsProps) {
                 {index + 1}. {item.name}
               </TableCell>
               <TableCell className="text-center">{item.count}</TableCell>
-              <TableCell className="text-center">
-                ${(item.revenue / item.count).toFixed(2)}
-              </TableCell>
               <TableCell className="text-right font-medium">
                 ${item.revenue.toFixed(2)}
               </TableCell>

@@ -5,32 +5,37 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { SalesChart } from '@/components/dashboard/SalesChart';
 import { PopularItems } from '@/components/dashboard/PopularItems';
 import { TableStatus } from '@/components/dashboard/TableStatus';
-import { mockDashboardStats, mockTableSections } from '@/data/mockData';
-import { DollarSign, Users, ShoppingBag, CreditCard, ChefHat, ClipboardList } from 'lucide-react';
+import { useReports } from '@/hooks/useReports';
+import { useTables } from '@/hooks/useTables';
+import { DollarSign, Users, ShoppingBag, CreditCard, ChefHat, ClipboardList, AlertTriangle } from 'lucide-react';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(mockDashboardStats);
-  const [loading, setLoading] = useState(true);
-  
-  // Simulate loading from API
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year'>('day');
+  const { tableData } = useTables();
+  const { 
+    salesByDay, 
+    popularItems, 
+    totalSales, 
+    totalOrders, 
+    salesTrend, 
+    ordersTrend,
+    isLoading 
+  } = useReports(dateRange);
   
   // Calculate total tables and occupied tables
-  const totalTables = mockTableSections.reduce(
+  const totalTables = tableData ? tableData.reduce(
     (acc, section) => acc + section.tables.length,
     0
-  );
+  ) : 0;
   
-  const occupiedTables = mockTableSections.reduce(
+  const occupiedTables = tableData ? tableData.reduce(
     (acc, section) => 
       acc + section.tables.filter(t => t.status === 'occupied').length,
     0
-  );
+  ) : 0;
+
+  // Calculate average order value
+  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
   
   return (
     <MainLayout>
@@ -40,7 +45,7 @@ export default function Dashboard() {
           Welcome to RestaurantPro. Here's an overview of your restaurant's performance.
         </p>
         
-        {loading ? (
+        {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-36 bg-muted animate-pulse rounded-lg" />
@@ -50,28 +55,27 @@ export default function Dashboard() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Sales Today"
-              value={`$${stats.totalSalesToday.toFixed(2)}`}
+              value={`$${totalSales.toFixed(2)}`}
               icon={<DollarSign className="h-4 w-4" />}
               description="Daily revenue"
-              trend={{ value: 12.5, positive: true }}
+              trend={salesTrend !== 0 ? { value: salesTrend, positive: salesTrend >= 0 } : undefined}
             />
             <StatCard
               title="Total Orders"
-              value={stats.totalOrdersToday}
+              value={totalOrders}
               icon={<ShoppingBag className="h-4 w-4" />}
               description="Orders today"
-              trend={{ value: 8.2, positive: true }}
+              trend={ordersTrend !== 0 ? { value: ordersTrend, positive: ordersTrend >= 0 } : undefined}
             />
             <StatCard
               title="Average Order"
-              value={`$${stats.averageOrderValue.toFixed(2)}`}
+              value={`$${averageOrderValue.toFixed(2)}`}
               icon={<CreditCard className="h-4 w-4" />}
               description="Per order"
-              trend={{ value: 3.1, positive: true }}
             />
             <StatCard
               title="Table Occupancy"
-              value={`${Math.round((occupiedTables / totalTables) * 100)}%`}
+              value={`${totalTables > 0 ? Math.round((occupiedTables / totalTables) * 100) : 0}%`}
               icon={<Users className="h-4 w-4" />}
               description={`${occupiedTables} of ${totalTables} tables`}
             />
@@ -79,21 +83,27 @@ export default function Dashboard() {
         )}
         
         <div className="grid gap-4 grid-cols-1 md:grid-cols-3 lg:grid-cols-7">
-          {loading ? (
+          {isLoading ? (
             <>
               <div className="md:col-span-2 lg:col-span-4 h-80 bg-muted animate-pulse rounded-lg" />
               <div className="md:col-span-1 lg:col-span-3 h-80 bg-muted animate-pulse rounded-lg" />
             </>
           ) : (
             <>
-              <SalesChart data={stats.salesByDay} />
-              <PopularItems items={stats.popularItems} />
+              <div className="md:col-span-2 lg:col-span-4 dashboard-card h-80">
+                <h3 className="font-medium mb-4">Sales Trend</h3>
+                <SalesChart data={salesByDay} />
+              </div>
+              <div className="md:col-span-1 lg:col-span-3 dashboard-card h-80">
+                <h3 className="font-medium mb-4">Popular Items</h3>
+                <PopularItems items={popularItems} />
+              </div>
             </>
           )}
         </div>
         
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {loading ? (
+          {isLoading ? (
             <>
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
@@ -161,24 +171,5 @@ export default function Dashboard() {
         </div>
       </div>
     </MainLayout>
-  );
-}
-
-function AlertTriangle({ className }: {className?: string}) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-      <line x1="12" y1="9" x2="12" y2="13"></line>
-      <line x1="12" y1="17" x2="12.01" y2="17"></line>
-    </svg>
   );
 }
