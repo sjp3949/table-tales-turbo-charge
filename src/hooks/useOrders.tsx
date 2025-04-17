@@ -167,7 +167,7 @@ export function useOrders() {
       
       if (customerId) {
         try {
-          await supabase.rpc('update_customer_stats', { 
+          await (supabase as any).rpc('update_customer_stats', { 
             p_customer_id: customerId 
           });
         } catch (error) {
