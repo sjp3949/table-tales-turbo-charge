@@ -167,9 +167,14 @@ export function useOrders() {
       
       if (customerId) {
         try {
-          const { error: updateError } = await supabase.rpc('update_customer_stats', {
-            p_customer_id: customerId
-          });
+          type UpdateCustomerStatsParams = {
+            p_customer_id: string;
+          };
+          
+          const { error: updateError } = await supabase.rpc<UpdateCustomerStatsParams>(
+            'update_customer_stats',
+            { p_customer_id: customerId }
+          );
           
           if (updateError) {
             console.error('Error updating customer stats:', updateError);
