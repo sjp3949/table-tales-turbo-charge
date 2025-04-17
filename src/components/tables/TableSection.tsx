@@ -185,6 +185,9 @@ export function TableSectionComponent({
                   table.status === 'occupied' && 'bg-red-500',
                   table.status === 'reserved' && 'bg-yellow-500'
                 )} />
+                <div className="absolute top-1 right-1 text-xs opacity-60">
+                  #{table.id.substring(0, 4)}
+                </div>
               </div>
             );
           })}

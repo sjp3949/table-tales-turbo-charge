@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Order } from '@/types';
@@ -8,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Printer, AlertTriangle, Plus } from 'lucide-react';
+import { Printer, AlertTriangle, Plus, IndianRupee } from 'lucide-react';
 import { CreateOrderDialog } from '@/components/orders/CreateOrderDialog';
 
 export default function Orders() {
@@ -91,13 +92,13 @@ export default function Orders() {
                   <span>
                     Order Details 
                     <span className="ml-2 text-sm text-muted-foreground">
-                      #{selectedOrder.id}
+                      #{selectedOrder.id.substring(0, 4)}
                     </span>
                   </span>
                 </DialogTitle>
                 <DialogDescription>
                   {selectedOrder.tableId 
-                    ? `Table ${selectedOrder.tableId.replace('table', '')}`
+                    ? `Table ${selectedOrder.tableId.substring(0, 4)}`
                     : 'Takeout Order'
                   }
                   {selectedOrder.customerName && ` - ${selectedOrder.customerName}`}
@@ -131,7 +132,7 @@ export default function Orders() {
                             {item.quantity}x {item.name}
                           </span>
                           <span>
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ₹{(item.price * item.quantity).toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -142,7 +143,7 @@ export default function Orders() {
                   
                   <div className="flex justify-between font-medium">
                     <span>Total</span>
-                    <span>${selectedOrder.total.toFixed(2)}</span>
+                    <span>₹{selectedOrder.total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

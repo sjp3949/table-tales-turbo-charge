@@ -42,14 +42,12 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
   const { menuItems, categories, isLoading: isLoadingMenu } = useMenu();
   const { updateTableStatus } = useTables();
   
-  // Find the existing order for this table if any
   const existingOrder = table ? orders?.find(order => 
     order.tableId === table.id && 
     order.status !== 'completed' && 
     order.status !== 'cancelled'
   ) : null;
   
-  // Set the active tab based on table status
   const [activeTab, setActiveTab] = useState<string>('order');
   
   useEffect(() => {
@@ -312,7 +310,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                               <div className="flex-1">
                                 <div className="font-medium">{item.name}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  ${item.price.toFixed(2)} x {item.quantity}
+                                  ₹{item.price.toFixed(2)} x {item.quantity}
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
@@ -352,7 +350,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                   <div className="border-t p-2">
                     <div className="flex justify-between font-medium mb-2">
                       <span>Total</span>
-                      <span>${calculateTotal().toFixed(2)}</span>
+                      <span>₹{calculateTotal().toFixed(2)}</span>
                     </div>
                     
                     <div className="flex space-x-2">
@@ -441,7 +439,7 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                 {existingOrder && (
                   <div className="border rounded-md p-3 mt-4">
                     <h4 className="font-medium mb-2 flex justify-between items-center">
-                      <span>Current Order</span>
+                      <span>Current Order (#{existingOrder.id.substring(0, 4)})</span>
                       {table.status === 'occupied' && (
                         <div className="flex space-x-2">
                           <Button 
@@ -467,13 +465,13 @@ export function TableActionDialog({ table, open, onClose }: TableActionDialogPro
                       {existingOrder.items.map(item => (
                         <div key={item.id} className="flex justify-between">
                           <span>{item.quantity}x {item.name}</span>
-                          <span>${(item.price * item.quantity).toFixed(2)}</span>
+                          <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                       ))}
                       <Separator className="my-2" />
                       <div className="flex justify-between font-medium">
                         <span>Total</span>
-                        <span>${existingOrder.total.toFixed(2)}</span>
+                        <span>₹{existingOrder.total.toFixed(2)}</span>
                       </div>
                       {existingOrder.customerName && (
                         <div className="mt-2 text-sm text-muted-foreground">

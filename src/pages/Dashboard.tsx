@@ -9,7 +9,7 @@ import { useReports } from '@/hooks/useReports';
 import { useTables } from '@/hooks/useTables';
 import { useOrders } from '@/hooks/useOrders';
 import { useInventory } from '@/hooks/useInventory';
-import { DollarSign, Users, ShoppingBag, CreditCard, ChefHat, ClipboardList, AlertTriangle } from 'lucide-react';
+import { DollarSign, Users, ShoppingBag, CreditCard, ChefHat, ClipboardList, AlertTriangle, IndianRupee } from 'lucide-react';
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year'>('day');
@@ -28,7 +28,6 @@ export default function Dashboard() {
   
   // Calculate total tables and occupied tables
   const totalTables = tables ? tables.length : 0;
-  
   const occupiedTables = tables ? tables.filter(table => table.status === 'occupied').length : 0;
 
   // Calculate average order value
@@ -62,8 +61,8 @@ export default function Dashboard() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Sales Today"
-              value={`$${totalSales.toFixed(2)}`}
-              icon={<DollarSign className="h-4 w-4" />}
+              value={`₹${totalSales.toFixed(2)}`}
+              icon={<IndianRupee className="h-4 w-4" />}
               description="Daily revenue"
               trend={salesTrend !== 0 ? { value: salesTrend, positive: salesTrend >= 0 } : undefined}
             />
@@ -76,7 +75,7 @@ export default function Dashboard() {
             />
             <StatCard
               title="Average Order"
-              value={`$${averageOrderValue.toFixed(2)}`}
+              value={`₹${averageOrderValue.toFixed(2)}`}
               icon={<CreditCard className="h-4 w-4" />}
               description="Per order"
             />
@@ -139,7 +138,7 @@ export default function Dashboard() {
                           )}
                           <div>
                             <div className="font-medium">
-                              {order.tableId ? `Table ${order.tableId}` : `Takeout #${order.id.substring(0, 4)}`}
+                              {order.tableId ? `Table ${order.tableId.substring(0, 4)}` : `Takeout #${order.id.substring(0, 4)}`}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {order.status === 'pending' ? 'Pending' : 'Preparing'} 
@@ -147,7 +146,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-sm font-medium">${order.total.toFixed(2)}</div>
+                        <div className="text-sm font-medium">₹{order.total.toFixed(2)}</div>
                       </div>
                     ))}
                   </div>

@@ -8,7 +8,8 @@ interface TableStatusProps {
 }
 
 export function TableStatus({ occupied, total }: TableStatusProps) {
-  const percentage = (occupied / total) * 100;
+  // Calculate percentage safely to avoid NaN
+  const percentage = total > 0 ? (occupied / total) * 100 : 0;
   
   return (
     <Card>
