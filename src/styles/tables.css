@@ -10,12 +10,15 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: move;
   user-select: none;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
   z-index: 1;
+  overflow: hidden;
+  touch-action: none;
 }
 
 .restaurant-table:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
 }
 
 .restaurant-table.available {
@@ -31,6 +34,13 @@
 }
 
 .restaurant-table.dragging {
-  opacity: 0.6;
+  opacity: 0.8;
   z-index: 10;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  transition: none; /* Remove transition during drag for smoother experience */
+}
+
+/* Add smooth animation when finishing drag */
+.restaurant-table:not(.dragging) {
+  transition: left 0.2s ease-out, top 0.2s ease-out, box-shadow 0.2s ease, transform 0.1s ease;
 }

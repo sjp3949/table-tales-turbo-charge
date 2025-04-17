@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FolderPlus } from 'lucide-react';
 import { useTables } from '@/hooks/useTables';
+import { useOrders } from '@/hooks/useOrders';
 import {
   Select,
   SelectContent,
@@ -17,10 +18,11 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import '../styles/tables.css'; // Import the new CSS
+import '../styles/tables.css';
 
 export default function Tables() {
-  const { tables, sections, isLoading, addTable, addSection } = useTables();
+  const { tables, sections, isLoading: isLoadingTables, addTable, addSection } = useTables();
+  const { orders, isLoading: isLoadingOrders } = useOrders();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addTableDialogOpen, setAddTableDialogOpen] = useState(false);
@@ -70,6 +72,8 @@ export default function Tables() {
       console.error('Error adding section:', error);
     }
   };
+
+  const isLoading = isLoadingTables || isLoadingOrders;
 
   if (isLoading) {
     return (
