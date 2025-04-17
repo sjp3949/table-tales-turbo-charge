@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
@@ -144,7 +143,6 @@ export function useOrders() {
         throw orderError;
       }
 
-      // Fix the type error by explicitly typing the order items array
       type OrderItemInsert = {
         order_id: string;
         menu_item_id: string;
@@ -169,10 +167,13 @@ export function useOrders() {
       
       if (customerId) {
         try {
-          // Fix the RPC call by using proper parameter typing
-          const { error: updateError } = await supabase.rpc('update_customer_stats', {
+          interface UpdateCustomerStatsParams {
+            p_customer_id: string;
+          }
+          
+          const { error: updateError } = await supabase.rpc<UpdateCustomerStatsParams>('update_customer_stats', {
             p_customer_id: customerId
-          } as { p_customer_id: string });
+          });
           
           if (updateError) {
             console.error('Error updating customer stats:', updateError);
