@@ -10,8 +10,11 @@ import {
   BarChart3,
   Settings,
   Users,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 interface SidebarItem {
   title: string;
@@ -65,23 +68,46 @@ const sidebarItems: SidebarItem[] = [
 export function Sidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [expanded, setExpanded] = useState(true);
   
   return (
-    <div className="flex flex-col h-full space-y-2 p-4">
-      {sidebarItems.map((item) => (
-        <Link key={item.url} to={item.url}>
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start gap-2",
-              currentPath === item.url && "bg-muted"
-            )}
-          >
-            {item.icon}
-            {item.title}
-          </Button>
-        </Link>
-      ))}
+    <div className={cn(
+      "h-screen bg-gray-900 text-white transition-all duration-300 flex flex-col relative",
+      expanded ? "w-64" : "w-20"
+    )}>
+      <div className="flex justify-between items-center p-4 border-b border-gray-800">
+        {expanded && <h2 className="text-xl font-bold text-restaurant-500">RestaurantPro</h2>}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-gray-400 hover:text-white hover:bg-gray-800 ml-auto"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+        </Button>
+      </div>
+      
+      <div className="flex flex-col flex-grow space-y-2 p-3 overflow-y-auto">
+        {sidebarItems.map((item) => (
+          <Link key={item.url} to={item.url}>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start gap-3 text-left mb-1 hover:bg-gray-800 hover:text-white transition-colors",
+                expanded ? "" : "justify-center",
+                currentPath === item.url ? "bg-gray-800 text-white" : "text-gray-400"
+              )}
+            >
+              {item.icon}
+              {expanded && <span>{item.title}</span>}
+            </Button>
+          </Link>
+        ))}
+      </div>
+      
+      <div className="p-4 border-t border-gray-800 text-center">
+        {expanded && <span className="text-xs text-gray-500">© 2025 RestaurantPro</span>}
+      </div>
     </div>
   );
 }
