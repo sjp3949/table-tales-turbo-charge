@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
@@ -143,17 +144,26 @@ export function useOrders() {
         throw orderError;
       }
 
+      // Fix the type error by explicitly typing the order items array
+      type OrderItemInsert = {
+        order_id: string;
+        menu_item_id: string;
+        quantity: number;
+        price: number;
+        notes?: string | null;
+      }
+      
+      const orderItems: OrderItemInsert[] = items.map(item => ({
+        order_id: orderData.id,
+        menu_item_id: item.menuItemId,
+        quantity: item.quantity,
+        price: item.price,
+        notes: item.notes
+      }));
+
       const { error: itemsError } = await supabase
         .from('order_items')
-        .insert(
-          items.map(item => ({
-            order_id: orderData.id,
-            menu_item_id: item.menuItemId,
-            quantity: item.quantity,
-            price: item.price,
-            notes: item.notes
-          }))
-        );
+        .insert(orderItems);
 
       if (itemsError) throw itemsError;
       
