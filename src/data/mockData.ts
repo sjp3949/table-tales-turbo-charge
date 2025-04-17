@@ -1,5 +1,5 @@
 
-import { MenuItem, MenuCategory, Table, TableSection, Order, InventoryItem, Recipe, DashboardStats } from '@/types';
+import { MenuItem, MenuCategory, Table, TableSection, Order, InventoryItem, DashboardStats } from '@/types';
 
 // Mock Menu Categories
 export const mockCategories: MenuCategory[] = [
