@@ -4,6 +4,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types';
 import { toast } from '@/hooks/use-toast';
 
+// Define type for raw customer data from Supabase
+type CustomerRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string;
+  address: string | null;
+  notes: string | null;
+  total_orders: number;
+  total_spent: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// Helper function to convert from database row to Customer type
+const mapCustomerRowToCustomer = (row: CustomerRow): Customer => ({
+  id: row.id,
+  name: row.name,
+  email: row.email || undefined,
+  phone: row.phone,
+  address: row.address || undefined,
+  notes: row.notes || undefined,
+  createdAt: new Date(row.created_at),
+  updatedAt: new Date(row.updated_at),
+  totalOrders: row.total_orders,
+  totalSpent: row.total_spent,
+});
+
 export function useCustomers() {
   const queryClient = useQueryClient();
 
@@ -24,18 +52,7 @@ export function useCustomers() {
         throw error;
       }
       
-      return data.map((customer: any) => ({
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-        notes: customer.notes,
-        createdAt: new Date(customer.created_at),
-        updatedAt: new Date(customer.updated_at),
-        totalOrders: customer.total_orders || 0,
-        totalSpent: customer.total_spent || 0,
-      })) as Customer[];
+      return (data as CustomerRow[]).map(mapCustomerRowToCustomer);
     },
   });
 
@@ -51,18 +68,7 @@ export function useCustomers() {
     }
     
     if (data) {
-      return {
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        notes: data.notes,
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at),
-        totalOrders: data.total_orders || 0,
-        totalSpent: data.total_spent || 0,
-      } as Customer;
+      return mapCustomerRowToCustomer(data as CustomerRow);
     }
     
     return null;
@@ -94,26 +100,13 @@ export function useCustomers() {
           notes: customer.notes,
           total_orders: 0,
           total_spent: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         }])
         .select()
         .single();
 
       if (error) throw error;
       
-      return {
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        notes: data.notes,
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at),
-        totalOrders: data.total_orders || 0,
-        totalSpent: data.total_spent || 0,
-      } as Customer;
+      return mapCustomerRowToCustomer(data as CustomerRow);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -143,7 +136,6 @@ export function useCustomers() {
         .from('customers')
         .update({
           ...customerData,
-          updated_at: new Date().toISOString(),
         })
         .eq('id', id)
         .select()
@@ -151,7 +143,7 @@ export function useCustomers() {
 
       if (error) throw error;
 
-      return data;
+      return mapCustomerRowToCustomer(data as CustomerRow);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
