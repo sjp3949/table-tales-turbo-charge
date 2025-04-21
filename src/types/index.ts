@@ -135,3 +135,21 @@ export interface DashboardStats {
   salesByDay: DailySales[];
   popularItems: PopularItem[];
 }
+
+// New Recipe Management types
+export interface Recipe {
+  id: string;
+  menuItemId: string;
+  menuItemName?: string;
+  createdAt: Date;
+  ingredients: RecipeIngredient[];
+}
+
+export interface RecipeIngredient {
+  id: string;
+  recipeId: string;
+  inventoryId: string;
+  inventoryName?: string;
+  quantity: number;
+  unit: string;
+}
